@@ -10,5 +10,4 @@ backend/.env
 .DS_Store
 Thumbs.db
 
-# Ignore log files
-*.log
+
