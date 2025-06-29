@@ -1,20 +1,17 @@
 const cartService = require('../services/cartService');
 
-// Add a product to the cart (or increase quantity)
 exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
     const userId = req.user.id;
     const cartItem = await cartService.addToCart(userId, productId, quantity || 1);
     res.status(201).json(cartItem);
-  } catch (err)
-  {console.log("err--",err)
+  } catch (err) {
+    console.log("err--", err);
     res.status(400).json({ error: err.message });
-    
   }
 };
 
-// Get all cart items for the user
 exports.getCart = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -25,11 +22,10 @@ exports.getCart = async (req, res) => {
   }
 };
 
-// Update quantity of a cart item (by cartItemId)
 exports.updateCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { id: cartItemId } = req.params; // cartItemId from URL
+    const { id: cartItemId } = req.params;
     const { quantity } = req.body;
     const cartItem = await cartService.updateCartItem(userId, cartItemId, quantity);
     res.json(cartItem);
@@ -38,11 +34,10 @@ exports.updateCartItem = async (req, res) => {
   }
 };
 
-// Remove a cart item (by cartItemId)
 exports.removeCartItem = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { id: cartItemId } = req.params; // cartItemId from URL
+    const { id: cartItemId } = req.params;
     await cartService.removeCartItem(userId, cartItemId);
     res.json({ message: 'Cart item removed successfully' });
   } catch (err) {
@@ -50,7 +45,6 @@ exports.removeCartItem = async (req, res) => {
   }
 };
 
-// Clear the entire cart
 exports.clearCart = async (req, res) => {
   try {
     const userId = req.user.id;

@@ -4,38 +4,20 @@ class CartService {
   // Add a product to the cart (or increase quantity if exists)
   async addToCart(userId, productId, quantity = 1) {
     return await sequelize.transaction(async (t) => {
-      let cartItem = await CartItem.findOne({
+      // Use findOrCreate to avoid race conditions and unique constraint errors
+      const [cartItem, created] = await CartItem.findOrCreate({
         where: { userId, productId },
+        defaults: { quantity },
         transaction: t
       });
 
-      if (cartItem) {
+      // If the item already existed, update its quantity
+      if (!created) {
         cartItem.quantity += quantity;
         await cartItem.save({ transaction: t });
-      } else {
-        try {
-          cartItem = await CartItem.create({ userId, productId, quantity }, { transaction: t });
-        } catch (err) {
-          // If unique constraint error, try to update instead (in case of race condition)
-          if (err.name === 'SequelizeUniqueConstraintError') {
-            cartItem = await CartItem.findOne({
-              where: { userId, productId },
-              transaction: t
-            });
-            if (cartItem) {
-              cartItem.quantity += quantity;
-              await cartItem.save({ transaction: t });
-            } else {
-              // Defensive: still not found, throw a meaningful error
-              throw new Error('Cart item could not be found or created after unique constraint error');
-            }
-          } else {
-            throw err;
-          }
-        }
       }
 
-      // Optionally include product details in response
+      // Return the cart item with product details
       return await CartItem.findOne({
         where: { id: cartItem.id },
         include: [{ model: Product, as: 'product' }],
