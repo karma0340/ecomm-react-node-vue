@@ -180,4 +180,4 @@ This project is for educational purposes.
 
 ---
 
-**Developed as
+**Developed as a college project.**
