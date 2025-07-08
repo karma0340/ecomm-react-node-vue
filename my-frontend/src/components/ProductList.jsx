@@ -3,8 +3,7 @@ import axios from 'axios';
 
 function renderStars(rating = 0) {
   const stars = [];
-  let i = 0;
-  for (; i < Math.floor(rating); i++) {
+  for (let i = 0; i < Math.floor(rating); i++) {
     stars.push(
       <svg width="18" height="18" className="text-warning" key={`star-full-${i}`}>
         <use xlinkHref="#star-full" />
@@ -21,33 +20,38 @@ function renderStars(rating = 0) {
   return stars;
 }
 
-function ProductList({ onCartUpdate }) {
+function ProductList({ onCartUpdate, subcategoryId }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
-
-  // Store refs to quantity inputs
   const quantityRefs = useRef({});
 
   useEffect(() => {
     setLoading(true);
     setError(null);
+    let url = `http://localhost:3000/api/products?page=${page}&limit=${limit}`;
+    if (subcategoryId) url += `&subcategoryId=${subcategoryId}`;
     axios
-      .get(`http://localhost:3000/api/products?page=${page}&limit=${limit}`)
+      .get(url)
       .then(res => {
-        setProducts(res.data.products || []);
+        let prods = [];
+        if (Array.isArray(res.data)) {
+          prods = res.data;
+        } else if (Array.isArray(res.data.products)) {
+          prods = res.data.products;
+        }
+        setProducts(prods);
         setTotalPages(res.data.totalPages || 1);
         setLoading(false);
       })
-      .catch(err => {
-        console.error(err);
+      .catch(() => {
         setError('Failed to load products');
         setLoading(false);
       });
-  }, [page]);
+  }, [page, subcategoryId]);
 
   const getImageSrc = (prod) => {
     if (!prod.imageUrl) return '/images/default-product.jpg';
@@ -55,7 +59,6 @@ function ProductList({ onCartUpdate }) {
     return `http://localhost:3000${prod.imageUrl}`;
   };
 
-  // Add to Cart handler
   const handleAddToCart = async (productId, idx) => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -65,17 +68,39 @@ function ProductList({ onCartUpdate }) {
     const quantity = quantityRefs.current[idx]?.value || 1;
     try {
       await axios.post(
-        'http://localhost:3000/api/cart',
+        'http://localhost:3000/api/cart/items',
         { productId, quantity: Number(quantity) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert('Product added to cart!');
-      if (onCartUpdate) onCartUpdate(); // Refresh cart count in header
+      if (onCartUpdate) onCartUpdate();
     } catch (err) {
       alert(
         err.response?.data?.message ||
         err.response?.data?.error ||
         'Failed to add to cart!'
+      );
+    }
+  };
+
+  const handleAddToWishlist = async (productId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to add items to your wishlist.');
+      return;
+    }
+    try {
+      await axios.post(
+        'http://localhost:3000/api/wishlist/items',
+        { productId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert('Product added to wishlist!');
+    } catch (err) {
+      alert(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        'Failed to add to wishlist!'
       );
     }
   };
@@ -87,18 +112,6 @@ function ProductList({ onCartUpdate }) {
   return (
     <section className="pb-5">
       <div className="container-lg">
-        <div className="row">
-          <div className="col-md-12">
-            <div className="section-header d-flex flex-wrap justify-content-between my-4">
-              <h2 className="section-title">Best selling products</h2>
-              <div className="d-flex align-items-center">
-                <a href="/products" className="btn btn-primary rounded-1">
-                  View All
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
         <div className="row">
           <div className="col-md-12">
             <div className="product-grid row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 row-cols-xl-4 row-cols-xxl-5">
@@ -114,7 +127,7 @@ function ProductList({ onCartUpdate }) {
                       <h3 className="fs-6 fw-normal">{p.name}</h3>
                       <div>
                         <span className="rating">{renderStars(p.rating || 0)}</span>
-                        <span>{p.reviews }</span>
+                        <span>{p.reviews}</span>
                       </div>
                       <div className="d-flex justify-content-center align-items-center gap-2">
                         <del>{p.old_price || ''}</del>
@@ -149,7 +162,12 @@ function ProductList({ onCartUpdate }) {
                             </button>
                           </div>
                           <div className="col-2">
-                            <button type="button" className="btn btn-outline-dark rounded-1 p-2 fs-6 w-100" aria-label="Add to Wishlist">
+                            <button
+                              type="button"
+                              className="btn btn-outline-dark rounded-1 p-2 fs-6 w-100"
+                              aria-label="Add to Wishlist"
+                              onClick={() => handleAddToWishlist(p.id)}
+                            >
                               <svg width="18" height="18">
                                 <use xlinkHref="#heart" />
                               </svg>

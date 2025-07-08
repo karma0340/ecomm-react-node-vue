@@ -1,17 +1,17 @@
-const { Subcategory } = require('../models');
+const { SubCategory } = require('../models');
 
 class SubcategoryService {
-  async getAllSubCategories() {
+  async getAllSubCategories(options = {}) {
     try {
-      return await Subcategory.findAll();
+      return await SubCategory.findAll(options);
     } catch (err) {
       throw new Error('Failed to fetch subcategories: ' + err.message);
     }
   }
 
-  async getSubCategoryById(id) {
+  async getSubCategoryById(id, options = {}) {
     try {
-      const subcategory = await Subcategory.findByPk(id);
+      const subcategory = await SubCategory.findByPk(id, options);
       if (!subcategory) throw new Error('Subcategory not found');
       return subcategory;
     } catch (err) {
@@ -21,7 +21,7 @@ class SubcategoryService {
 
   async createSubCategory(data) {
     try {
-      return await Subcategory.create(data);
+      return await SubCategory.create(data);
     } catch (err) {
       throw new Error('Failed to create subcategory: ' + err.message);
     }
@@ -29,7 +29,7 @@ class SubcategoryService {
 
   async updateSubCategory(id, data) {
     try {
-      const subcategory = await Subcategory.findByPk(id);
+      const subcategory = await SubCategory.findByPk(id);
       if (!subcategory) throw new Error('Subcategory not found');
       return await subcategory.update(data);
     } catch (err) {
@@ -39,7 +39,7 @@ class SubcategoryService {
 
   async deleteSubCategory(id) {
     try {
-      const subcategory = await Subcategory.findByPk(id);
+      const subcategory = await SubCategory.findByPk(id);
       if (!subcategory) throw new Error('Subcategory not found');
       await subcategory.destroy();
       return { message: 'Subcategory deleted' };

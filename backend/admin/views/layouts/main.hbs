@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no">
+    <meta name="description" content="CoreUI Admin Panel">
+    <meta name="author" content="Your Name or Company">
+    <title>{{title}}</title>
+    <!-- Favicons -->
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- CoreUI CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css">
+    <link rel="stylesheet" crossorigin href="/assets/index-B7wyATDz.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/icons@3.0.1/css/all.min.css">
+    {{{styles}}}
+
+    <!-- Theme CSS: Use variables for backgrounds and text, and fix all text/table/small/muted/secondary visibility -->
+    <style>
+      body.light-theme {
+        --cui-body-bg: #f8fafc;
+        --cui-body-color: #222;
+        --cui-muted-color: #6c757d;
+        --cui-secondary-color: #495057;
+      }
+      body.dark-theme {
+        --cui-body-bg: #18181b;
+        --cui-body-color: #f1f5f9;
+        --cui-muted-color: #bdbdbd;
+        --cui-secondary-color: #d1d5db;
+      }
+      body {
+        background: var(--cui-body-bg) !important;
+        color: var(--cui-body-color) !important;
+      }
+      .header, .card, .dropdown-menu, .sidebar-sections-menu {
+        background: var(--cui-body-bg, #fff) !important;
+        color: var(--cui-body-color, #222) !important;
+      }
+      .bg-light {
+        background-color: var(--cui-body-bg) !important;
+        color: var(--cui-body-color) !important;
+      }
+      .bg-dark {
+        background-color: #23232b !important;
+        color: #f1f5f9 !important;
+      }
+      .text-body {
+        color: var(--cui-body-color, #222) !important;
+      }
+      .text-white {
+        color: #fff !important;
+      }
+      .text-white-50 {
+        color: #bdbdbd !important;
+      }
+      /* Muted and secondary text for both themes */
+      .text-muted, small, .small {
+        color: var(--cui-muted-color, #6c757d) !important;
+      }
+      .text-secondary {
+        color: var(--cui-secondary-color, #495057) !important;
+      }
+      /* TABLE VISIBILITY FIXES */
+      body.light-theme .table,
+      body.light-theme .table th,
+      body.light-theme .table td {
+        background-color: #fff !important;
+        color: #222 !important;
+      }
+      body.dark-theme .table,
+      body.dark-theme .table th,
+      body.dark-theme .table td {
+        background-color: #23232b !important;
+        color: #f1f5f9 !important;
+      }
+      body.light-theme .bg-light {
+        background-color: #f1f5f9 !important;
+        color: #222 !important;
+      }
+      body.dark-theme .bg-light {
+        background-color: #23232b !important;
+        color: #f1f5f9 !important;
+      }
+      body.light-theme .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: #f8fafc !important;
+      }
+      body.dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
+        background-color: #23232b !important;
+      }
+      body.light-theme .table-hover > tbody > tr:hover {
+        background-color: #e7eaee !important;
+      }
+      body.dark-theme .table-hover > tbody > tr:hover {
+        background-color: #1a1a1f !important;
+      }
+      /* End of table fixes */
+    </style>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    {{#unless hideHeader}}
+      {{> header}}
+    {{/unless}}
+    <main>
+      {{{body}}}
+    </main>
+    <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>
+    <script type="module" src="/assets/index-ZPsCKTGd.js"></script>
+    {{{scripts}}}
+  </body>
+</html>

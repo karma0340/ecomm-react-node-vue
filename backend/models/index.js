@@ -3,20 +3,19 @@
 const fs = require('fs');
 const path = require('path');
 const Sequelize = require('sequelize');
-const process = require('process');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 
+// ===== Load Sequelize Config =====
 let config;
 try {
   config = require(path.resolve(__dirname, '../config/config.js'))[env];
 } catch (err) {
-  console.error('Error loading config:', err);
+  console.error('Error loading Sequelize config:', err);
   process.exit(1);
 }
 
-const db = {};
-
+// ===== Initialize Sequelize =====
 let sequelize;
 try {
   if (config.use_env_variable) {
@@ -29,41 +28,31 @@ try {
   process.exit(1);
 }
 
-try {
-  fs
-    .readdirSync(__dirname)
-    .filter(file => {
-      return (
-        file.indexOf('.') !== 0 &&
-        file !== basename &&
-        file.slice(-3) === '.js' &&
-        file.indexOf('.test.js') === -1
-      );
-    })
-    .forEach(file => {
-      try {
-        const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
-        db[model.name] = model;
-      } catch (err) {
-        console.error(`Error loading model file ${file}:`, err);
-      }
-    });
-} catch (err) {
-  console.error('Error reading model directory:', err);
-  process.exit(1);
-}
+const db = {};
 
-try {
-  Object.keys(db).forEach(modelName => {
-    if (db[modelName].associate) {
-      db[modelName].associate(db);
-    }
+// ===== Import All Models =====
+fs
+  .readdirSync(__dirname)
+  .filter(file =>
+    file.indexOf('.') !== 0 &&
+    file !== basename &&
+    file.slice(-3) === '.js' &&
+    !file.endsWith('.test.js')
+  )
+  .forEach(file => {
+    // If the model exports a function (standard Sequelize CLI style)
+    const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
+    db[model.name] = model;
   });
-} catch (err) {
-  console.error('Error associating models:', err);
-  process.exit(1);
-}
 
+// ===== Setup Model Associations =====
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
+});
+
+// ===== Export Sequelize and Models =====
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

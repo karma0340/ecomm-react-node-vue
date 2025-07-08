@@ -8,11 +8,12 @@ const { Product } = require('../models');
 exports.getAllProducts = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 5;
+    const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
- // Add this line for debugging:
-    console.log('Fetching products:', { page, limit, offset });
-    const { rows, count } = await productService.getAllProducts({ offset, limit });
+    const subcategoryId = req.query.subcategoryId;
+
+    // productService must return { rows, count }
+    const { rows, count } = await productService.getAllProducts({ offset, limit, subcategoryId });
 
     res.json({
       products: rows,
@@ -21,8 +22,8 @@ exports.getAllProducts = async (req, res) => {
       totalPages: Math.ceil(count / limit)
     });
   } catch (err) {
-        console.error('Error in getAllProducts:', err); // <--- This will show the real error in your terminal!
-    res.status(500).json({ error: err.message });
+    console.error('Error in getAllProducts:', err);
+    res.status(500).json({ error: err.message || 'Failed to fetch products' });
   }
 };
 
@@ -35,7 +36,8 @@ exports.getProduct = async (req, res) => {
     }
     res.json(product);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in getProduct:', err);
+    res.status(500).json({ error: err.message || 'Failed to fetch product' });
   }
 };
 
@@ -46,14 +48,12 @@ exports.createProduct = async (req, res) => {
     if (!Array.isArray(products)) products = [products];
     products = products.map(p => typeof p === 'string' ? JSON.parse(p) : p);
 
-    // Validate all products
     for (const product of products) {
       if (!product.name || !product.price || !product.categoryId || !product.subCategoryId) {
         return res.status(400).json({ error: 'Missing required fields in one or more products' });
       }
     }
 
-    // Attach images by index
     const files = req.files || [];
     products.forEach((product, idx) => {
       if (files[idx]) {
@@ -64,7 +64,8 @@ exports.createProduct = async (req, res) => {
     const createdProducts = await Product.bulkCreate(products);
     res.status(201).json(createdProducts);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error in createProduct:', err);
+    res.status(400).json({ error: err.message || 'Failed to create products' });
   }
 };
 
@@ -81,7 +82,8 @@ exports.updateProduct = async (req, res) => {
 
     if (req.file) {
       newImageUrl = `/images/products/${req.file.filename}`;
-    } else if (imageUrl) {
+    } else if (imageUrl && imageUrl.startsWith('http')) {
+      // Download remote image
       const fileExt = path.extname(imageUrl).split('?')[0] || '.jpg';
       const filename = `${Date.now()}${fileExt}`;
       const localPath = path.join(__dirname, '../public/images/products', filename);
@@ -99,6 +101,8 @@ exports.updateProduct = async (req, res) => {
       });
 
       newImageUrl = `/images/products/${filename}`;
+    } else if (imageUrl) {
+      newImageUrl = imageUrl;
     }
 
     await product.update({
@@ -112,7 +116,8 @@ exports.updateProduct = async (req, res) => {
 
     res.json(product);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error in updateProduct:', err);
+    res.status(400).json({ error: err.message || 'Failed to update product' });
   }
 };
 
@@ -126,6 +131,7 @@ exports.deleteProduct = async (req, res) => {
     await product.destroy();
     res.json({ message: 'Product deleted' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in deleteProduct:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete product' });
   }
 };

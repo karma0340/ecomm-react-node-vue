@@ -1,5 +1,7 @@
+
 const cartItemService = require('../services/cartItemService');
 
+// Get all cart items for the current user (with product details)
 exports.getCart = async (req, res) => {
   try {
     const cartItems = await cartItemService.getCartItems(req.user.id);
@@ -8,6 +10,8 @@ exports.getCart = async (req, res) => {
     res.status(500).json({ error: err.message || 'Failed to get cart items' });
   }
 };
+
+// Add a product to cart (or increase quantity if already exists)
 
 exports.addToCart = async (req, res) => {
   try {
@@ -21,6 +25,7 @@ exports.addToCart = async (req, res) => {
   }
 };
 
+// Update quantity of a specific cart item
 exports.updateCartItem = async (req, res) => {
   try {
     const { quantity } = req.body;
@@ -32,6 +37,7 @@ exports.updateCartItem = async (req, res) => {
   }
 };
 
+// Remove a specific cart item
 exports.removeCartItem = async (req, res) => {
   try {
     await cartItemService.removeCartItem(req.user.id, req.params.cartItemId);
@@ -41,6 +47,7 @@ exports.removeCartItem = async (req, res) => {
   }
 };
 
+// Clear all cart items for the current user
 exports.clearCart = async (req, res) => {
   try {
     await cartItemService.clearCart(req.user.id);

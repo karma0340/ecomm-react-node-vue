@@ -1,70 +1,178 @@
-# Getting Started with Create React App
+# E-Commerce Frontend (`my-frontend`)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is the React.js frontend for the E-Commerce Web Application. It provides a modern, responsive user interface for customers to browse products, manage their cart and wishlist, place orders, and manage their accounts.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Table of Contents
 
-### `npm start`
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Getting Started](#getting-started)
+- [Folder Structure](#folder-structure)
+- [API Endpoints](#api-endpoints)
+- [Environment Variables](#environment-variables)
+- [Customization](#customization)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+---
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Features
 
-### `npm test`
+- User registration and login (JWT-based)
+- Product browsing and search (with category filter)
+- Add to cart, update quantity, remove from cart
+- Wishlist functionality
+- Place orders and view order history
+- Responsive design for desktop and mobile
+- Admin panel access (if authorized)
+- Toast notifications for user feedback
+- Secure session management
+- Error handling and loading indicators
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+---
 
-### `npm run build`
+## Screenshots
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+> *(Add screenshots of your Home Page, Product List, Cart, Wishlist, Checkout, and Admin Panel here for better presentation.)*
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Getting Started
 
-### `npm run eject`
+### Prerequisites
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- [Node.js](https://nodejs.org/) (v16 or above recommended)
+- npm (comes with Node.js)
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Installation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/yourusername/e-comm.git
+   cd e-comm/my-frontend
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+2. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-## Learn More
+3. **Configure environment variables (optional):**
+   - Create a `.env` file in the root of `my-frontend` if you want to override default API URLs.
+   - Example:
+     ```
+     REACT_APP_API_URL=http://localhost:3000
+     ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+### Running the App
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Start the development server:
+```bash
+npm start
+```
+The app will run at [http://localhost:3000](http://localhost:3000).
 
-### Code Splitting
+### Build for Production
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```bash
+npm run build
+```
+Builds the app for production to the `build` folder.
 
-### Analyzing the Bundle Size
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Folder Structure
 
-### Making a Progressive Web App
+```
+my-frontend/
+├── public/
+│   ├── index.html
+│   └── ...
+├── src/
+│   ├── api/              # API utility functions
+│   ├── assets/           # Images, icons, etc.
+│   ├── components/       # Reusable React components
+│   ├── pages/            # Page-level components (Home, Cart, etc.)
+│   ├── styles/           # Custom CSS/SCSS files
+│   ├── App.js
+│   ├── index.js
+│   └── ...
+├── .env                  # Environment variables (optional)
+├── package.json
+└── README.md
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+---
 
-### Advanced Configuration
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The frontend communicates with the backend via RESTful APIs.  
+Example endpoints:
+- `POST /api/auth/register` – User registration
+- `POST /api/auth/login` – User login
+- `GET /api/products` – List products
+- `GET /api/products/:id` – Product details
+- `POST /api/cart/items` – Add to cart
+- `GET /api/cart` – View cart
+- `PUT /api/cart/items/:id` – Update cart item quantity
+- `DELETE /api/cart/items/:id` – Remove from cart
+- `POST /api/orders` – Place order
+- `GET /api/orders` – View order history
+- `POST /api/wishlist/items` – Add to wishlist
+- `GET /api/wishlist/items` – View wishlist
 
-### Deployment
+> **Note:** Make sure the backend server is running and accessible at the configured API URL.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+---
 
-### `npm run build` fails to minify
+## Environment Variables
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+You can use a `.env` file to override default settings.  
+Example:
+```
+REACT_APP_API_URL=http://localhost:3000
+```
+Access these in your code via `process.env.REACT_APP_API_URL`.
+
+---
+
+## Customization
+
+- Update API URLs in `src/api` or via environment variables as needed.
+- Modify styles in `src/styles` or use Bootstrap classes.
+- Change branding (logo, colors) in `src/assets` and `public/index.html`.
+
+---
+
+## Contributing
+
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/YourFeature`)
+3. Commit your changes (`git commit -m 'Add some feature'`)
+4. Push to the branch (`git push origin feature/YourFeature`)
+5. Open a pull request
+
+---
+
+## License
+
+This project is for educational purposes.
+
+---
+
+## Acknowledgements
+
+- [React.js](https://react.dev/)
+- [Bootstrap](https://getbootstrap.com/)
+- [Axios](https://axios-http.com/)
+- [FontAwesome](https://fontawesome.com/)
+- [Toastify](https://fkhadra.github.io/react-toastify/)
+
+---
+
+**Developed as a college project.**

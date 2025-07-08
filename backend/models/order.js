@@ -15,12 +15,13 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
         defaultValue: 'pending',
-        validate: { isIn: [['pending', 'processing', 'shipped', 'delivered', 'cancelled']] }
+        validate: { isIn: [['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'paid']] }
       },
       shippingAddress: { type: DataTypes.TEXT, allowNull: false },
       paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'cod' },
       phoneNumber: { type: DataTypes.STRING, allowNull: false },
-      email: { type: DataTypes.STRING, allowNull: false, validate: { isEmail: true } }
+      email: { type: DataTypes.STRING, allowNull: false, validate: { isEmail: true } },
+      paymentIntentId: { type: DataTypes.STRING, allowNull: true }
     },
     { sequelize, modelName: 'Order', tableName: 'Orders', timestamps: true }
   );

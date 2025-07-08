@@ -1,6 +1,6 @@
 'use strict';
 module.exports = (sequelize, DataTypes) => {
-  const Subcategory = sequelize.define('Subcategory', {
+  const SubCategory = sequelize.define('SubCategory', {
     name: {
       type: DataTypes.STRING,
       allowNull: false
@@ -14,10 +14,10 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'SubCategories'
   });
 
-  Subcategory.associate = function(models) {
-    Subcategory.belongsTo(models.Category, { foreignKey: 'categoryId' });
-    Subcategory.hasMany(models.Product, { as: 'products', foreignKey: 'subCategoryId' });
+  SubCategory.associate = function(models) {
+    SubCategory.belongsTo(models.Category, { foreignKey: 'categoryId', as: 'category' });
+    SubCategory.hasMany(models.Product, { as: 'products', foreignKey: 'subCategoryId' });
   };
 
-  return Subcategory;
+  return SubCategory;
 };

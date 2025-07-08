@@ -14,11 +14,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       references: { model: 'Categories', key: 'id' }
     },
-    subCategoryId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: { model: 'Subcategories', key: 'id' } // Table name should match your migration/model
-    },
+subCategoryId: {
+  type: DataTypes.INTEGER,
+  allowNull: false,
+  references: { model: 'SubCategories', key: 'id' } // Table name should match your migration/model
+}
+,
     imageUrl: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -32,7 +33,7 @@ module.exports = (sequelize, DataTypes) => {
 
   Product.associate = function(models) {
     Product.belongsTo(models.Category, { foreignKey: 'categoryId', as: 'category' });
-    Product.belongsTo(models.Subcategory, { foreignKey: 'subCategoryId', as: 'subcategory' });
+    Product.belongsTo(models.SubCategory, { foreignKey: 'subCategoryId', as: 'subCategory' });
   };
 
   return Product;

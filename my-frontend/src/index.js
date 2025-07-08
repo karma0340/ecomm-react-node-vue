@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom'; // <-- Import BrowserRouter
+import { BrowserRouter } from 'react-router-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -10,7 +10,10 @@ import './assets/css/vendor.css';
 import './assets/style.css'; // If this is a main style file
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+// Mount to 'app' instead of 'root'
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+
 root.render(
   <React.StrictMode>
     <BrowserRouter>

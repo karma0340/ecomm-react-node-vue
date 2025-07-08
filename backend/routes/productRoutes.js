@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const getUpload = require('../middleware/upload'); // <-- This is the correct import!
 const productController = require('../controllers/productController');
-const getUpload = require('../middleware/upload');
 
 const uploadProduct = getUpload('products');
 

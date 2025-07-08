@@ -1,7 +1,6 @@
 const { CartItem, Product } = require('../models');
 
 class CartItemService {
-  // Get all cart items for a user, including product details
   async getCartItems(userId) {
     return await CartItem.findAll({
       where: { userId },
@@ -9,29 +8,39 @@ class CartItemService {
     });
   }
 
-  // Add a product to cart or increase quantity if exists
   async addOrUpdateCartItem(userId, productId, quantity = 1) {
-    const existingItem = await CartItem.findOne({ where: { userId, productId } });
-    if (existingItem) {
-      existingItem.quantity += quantity;
-      await existingItem.save();
-      return existingItem;
-    } else {
-      return await CartItem.create({ userId, productId, quantity });
-    }
+    return await CartItem.sequelize.transaction(async (t) => {
+      const [cartItem, created] = await CartItem.findOrCreate({
+        where: { userId, productId },
+        defaults: { quantity },
+        transaction: t,
+      });
+
+      if (!created) {
+        cartItem.quantity += quantity;
+        await cartItem.save({ transaction: t });
+      }
+
+      return await CartItem.findOne({
+        where: { id: cartItem.id },
+        include: [{ model: Product, as: 'product' }],
+        transaction: t,
+      });
+    });
   }
 
-  // Update quantity of a cart item
   async updateCartItem(userId, cartItemId, quantity) {
+    if (quantity < 1) throw new Error('Quantity must be at least 1');
     const cartItem = await CartItem.findOne({ where: { id: cartItemId, userId } });
     if (!cartItem) throw new Error('Cart item not found');
-    if (quantity < 1) throw new Error('Quantity must be at least 1');
     cartItem.quantity = quantity;
     await cartItem.save();
-    return cartItem;
+    return await CartItem.findOne({
+      where: { id: cartItem.id },
+      include: [{ model: Product, as: 'product' }]
+    });
   }
 
-  // Remove a cart item
   async removeCartItem(userId, cartItemId) {
     const cartItem = await CartItem.findOne({ where: { id: cartItemId, userId } });
     if (!cartItem) throw new Error('Cart item not found');
@@ -39,7 +48,6 @@ class CartItemService {
     return true;
   }
 
-  // Clear all cart items for a user
   async clearCart(userId) {
     await CartItem.destroy({ where: { userId } });
     return true;

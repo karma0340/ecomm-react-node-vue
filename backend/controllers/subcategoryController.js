@@ -1,15 +1,24 @@
 const subcategoryService = require('../services/subcategoryService');
 const { Category } = require('../models');
 
-// Get all subcategories (optionally include parent category)
+// Get all subcategories (optionally filtered by categoryId)
 exports.getAllSubCategories = async (req, res) => {
   try {
-    const subcategories = await subcategoryService.getAllSubCategories({
-      include: [{ model: Category, attributes: ['id', 'name'] }]
-    });
+    const options = {
+      order: [['name', 'ASC']]
+    };
+    if (req.query.categoryId) {
+      options.where = { categoryId: req.query.categoryId };
+    }
+    const subcategories = await subcategoryService.getAllSubCategories(options);
+    // If you want to explicitly handle "no subcategories found"
+    if (!subcategories || subcategories.length === 0) {
+      return res.status(200).json([]); // Or: res.status(404).json({ error: 'No subcategories found' });
+    }
     res.json(subcategories);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in getAllSubCategories:', err);
+    res.status(500).json({ error: err.message || 'Failed to fetch subcategories' });
   }
 };
 
@@ -24,7 +33,8 @@ exports.getSubCategory = async (req, res) => {
     }
     res.json(subcategory);
   } catch (err) {
-    res.status(404).json({ error: err.message });
+    console.error('Error in getSubCategory:', err);
+    res.status(500).json({ error: err.message || 'Failed to fetch subcategory' });
   }
 };
 
@@ -38,7 +48,8 @@ exports.createSubCategory = async (req, res) => {
     const subcategory = await subcategoryService.createSubCategory({ name, categoryId });
     res.status(201).json(subcategory);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error in createSubCategory:', err);
+    res.status(400).json({ error: err.message || 'Failed to create subcategory' });
   }
 };
 
@@ -52,7 +63,8 @@ exports.updateSubCategory = async (req, res) => {
     }
     res.json(subcategory);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    console.error('Error in updateSubCategory:', err);
+    res.status(400).json({ error: err.message || 'Failed to update subcategory' });
   }
 };
 
@@ -65,6 +77,7 @@ exports.deleteSubCategory = async (req, res) => {
     }
     res.json(result);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error in deleteSubCategory:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete subcategory' });
   }
 };

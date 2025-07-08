@@ -1,24 +1,27 @@
 
 
 const authRoutes = require('./authRoutes');
-const cartRoutes = require('./cartRoutes');
+
 const categoryRoutes = require('./categoryRoutes');
 const favouriteRoutes = require('./favouriteRoutes');
 const orderRoutes = require('./orderRoutes');
-const productRoutes = require('./productRoutes');
+const productRoutes = require('./productRoutes');     // API routes
+const productsRoutes = require('../admin/routes/productsRoutes');   // Admin/web routes
 const protectedRoutes = require('./protectedRoutes');
 const subcategoryRoutes = require('./subcategoryRoutes');
 const userRoutes = require('./userRoutes');
 const cartItemRoutes = require('./cartItemRoutes');
+const notificationsRouter = require('../admin/routes/notifications');
 module.exports = {
   authRoutes,
-  cartRoutes,
   categoryRoutes,
   favouriteRoutes,
   orderRoutes,
-  productRoutes,
+  productRoutes,    // /api/products
+  productsRoutes,   // /products
   protectedRoutes,
   subcategoryRoutes,
   userRoutes,
-  cartItemRoutes
+  cartItemRoutes,
+  notificationsRouter
 };

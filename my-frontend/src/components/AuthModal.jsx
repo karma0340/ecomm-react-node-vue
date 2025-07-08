@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function AuthModal({ show, onClose, onAuthSuccess }) {
   const [activeTab, setActiveTab] = useState('login');
-  // Use 'identifier' for login (can be email or username)
   const [loginData, setLoginData] = useState({ identifier: '', password: '' });
-  // Use username for registration (not 'name'), plus email and password
   const [registerData, setRegisterData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const navigate = useNavigate();
 
   // Email validation helper
   const isValidEmail = (email) =>
@@ -31,14 +31,14 @@ function AuthModal({ show, onClose, onAuthSuccess }) {
         ? { email: identifier, password }
         : { username: identifier, password };
 
-      console.log('Attempting login with:', payload);
-
       const res = await axios.post(
         'http://localhost:3000/api/auth/login',
         payload,
-        { headers: { 'Content-Type': 'application/json' } }
+        {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }
       );
-      console.log('Login success:', res.data);
       localStorage.setItem('token', res.data.accessToken);
       setLoginData({ identifier: '', password: '' });
       setError('');
@@ -46,10 +46,6 @@ function AuthModal({ show, onClose, onAuthSuccess }) {
       if (typeof onAuthSuccess === 'function') onAuthSuccess();
       onClose();
     } catch (err) {
-      console.error('Login error:', err);
-      if (err.response) {
-        console.error('Backend error response:', err.response.data);
-      }
       setError(
         err.response?.data?.message ||
         err.response?.data?.error ||
@@ -78,9 +74,11 @@ function AuthModal({ show, onClose, onAuthSuccess }) {
       await axios.post(
         'http://localhost:3000/api/auth/signup',
         { username, email, password },
-        { headers: { 'Content-Type': 'application/json' } }
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
-      setRegisterData({ username: '', email: '', password: '' }); // Clear fields
+      setRegisterData({ username: '', email: '', password: '' });
       setError('');
       setSuccess('Registration successful! Please login.');
       setActiveTab('login');
@@ -98,6 +96,13 @@ function AuthModal({ show, onClose, onAuthSuccess }) {
     setActiveTab(tab);
     setError('');
     setSuccess('');
+  };
+
+  // Handle forgot password link
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    onClose();
+    navigate('/forgot-password');
   };
 
   if (!show) return null;
@@ -153,6 +158,12 @@ function AuthModal({ show, onClose, onAuthSuccess }) {
                     required
                     placeholder="Enter your password"
                   />
+                </div>
+                <div className="mb-3 d-flex justify-content-between align-items-center">
+                  <div></div>
+                  <a href="/forgot-password" onClick={handleForgotPassword} className="small">
+                    Forgot password?
+                  </a>
                 </div>
                 <button type="submit" className="btn btn-primary w-100">Login</button>
               </form>

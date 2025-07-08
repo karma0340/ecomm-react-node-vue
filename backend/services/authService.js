@@ -1,6 +1,7 @@
 const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const JWT_SECRET = process.env.JWT_SECRET || require('../config/authConfig').secret;
 
 class AuthService {
@@ -32,19 +33,25 @@ class AuthService {
     return { user, token };
   }
 
-  // Login: username and password are required
-  async login({ username, password }) {
-    if (!username || !password) {
-      throw new Error('Username and password are required');
+  // Login: username/email and password are required
+  async login({ email, username, password }) {
+    if ((!username && !email) || !password) {
+      throw new Error('Email or username and password are required');
     }
 
-    // Find user by username
-    const user = await User.findOne({ where: { username } });
-    if (!user) throw new Error('Invalid username or password');
+    // Find user by email or username
+    let user = null;
+    if (email) {
+      user = await User.findOne({ where: { email } });
+    }
+    if (!user && username) {
+      user = await User.findOne({ where: { username } });
+    }
+    if (!user) throw new Error('Invalid credentials');
 
     // Check password
     const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new Error('Invalid username or password');
+    if (!isValid) throw new Error('Invalid credentials');
 
     // Generate JWT token
     const token = jwt.sign(
@@ -56,36 +63,47 @@ class AuthService {
     return { user, token };
   }
 
-// Login: username/email and password are required
-async login({ email, username, password }) {
-  if ((!username && !email) || !password) {
-    throw new Error('Email or username and password are required');
+  // Generate password reset token and set expiration
+  async generatePasswordReset(email) {
+    const user = await User.findOne({ where: { email } });
+    if (!user) return null;
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = new Date(Date.now() + 3600000); // 1 hour
+    await user.save();
+
+    return { user, token };
   }
 
-  // Find user by email or username
-  let user;
-  if (email) {
-    user = await User.findOne({ where: { email } });
+  // Verify password reset token
+  async verifyPasswordResetToken(token) {
+    const user = await User.findOne({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: new Date() }
+      }
+    });
+    return user;
   }
-  if (!user && username) {
-    user = await User.findOne({ where: { username } });
+
+  // Reset password using token
+  async resetPassword(token, newPassword) {
+    const user = await User.findOne({
+      where: {
+        resetPasswordToken: token,
+        resetPasswordExpires: { $gt: new Date() }
+      }
+    });
+    if (!user) throw new Error('Invalid or expired password reset token.');
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.resetPasswordToken = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+
+    return user;
   }
-  if (!user) throw new Error('Invalid credentials');
-
-  // Check password
-  const isValid = await bcrypt.compare(password, user.password);
-  if (!isValid) throw new Error('Invalid credentials');
-
-  // Generate JWT token
-  const token = jwt.sign(
-    { id: user.id, username: user.username, email: user.email },
-    JWT_SECRET,
-    { expiresIn: '30d' }
-  );
-
-  return { user, token };
-}
-
 }
 
 module.exports = new AuthService();

@@ -30,31 +30,85 @@ function HeroSection() {
             <div className="row my-5">
               <div className="col">
                 <div className="row text-dark">
-                  <div className="col-auto">
-                    <p className="fs-1 fw-bold lh-sm mb-0">14k+</p>
+  <div   style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }} className="col-auto" >
+  <p
+    className="fs-1 fw-bold lh-sm mb-0"
+    style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}
+  >
+    14k+
+  </p>
+  </div>
+                  <div   style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }} className="col" >
+                    <p className="text-uppercase lh-sm mb-0 text-white"style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}>Product Varieties</p>
                   </div>
-                  <div className="col">
-                    <p className="text-uppercase lh-sm mb-0">Product Varieties</p>
+                </div>
+              </div>
+              <div className="col" >
+                <div className="row text-dark">
+                  <div className="col-auto" style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }}>
+                    <p className="fs-1 fw-bold lh-sm mb-0 text-white" style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}>50k+</p>
+                  </div>
+                  <div className="col"
+                  style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }}>
+                    <p className="text-uppercase lh-sm mb-0 text-white" style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}>Happy Customers</p>
                   </div>
                 </div>
               </div>
               <div className="col">
                 <div className="row text-dark">
-                  <div className="col-auto">
-                    <p className="fs-1 fw-bold lh-sm mb-0">50k+</p>
+                  <div className="col-auto" style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }}>
+                    <p className="fs-1 fw-bold lh-sm mb-0 text-white" style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}>10+</p>
                   </div>
-                  <div className="col">
-                    <p className="text-uppercase lh-sm mb-0">Happy Customers</p>
-                  </div>
-                </div>
-              </div>
-              <div className="col">
-                <div className="row text-dark">
-                  <div className="col-auto">
-                    <p className="fs-1 fw-bold lh-sm mb-0">10+</p>
-                  </div>
-                  <div className="col">
-                    <p className="text-uppercase lh-sm mb-0">Store Locations</p>
+                  <div className="col" style={{
+    background: 'rgba(0,0,0,0.5)',
+    borderRadius: '12px',
+    padding: '16px 32px',
+    display: 'inline-block'
+  }}>
+                    <p className="text-uppercase lh-sm mb-0 text-white" style={{
+      color: '#28a745',
+      textShadow: '2px 2px 8px rgba(0,0,0,0.7)'
+    }}>Store Locations</p>
                   </div>
                 </div>
               </div>

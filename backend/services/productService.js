@@ -1,15 +1,20 @@
-const { Product, Category, Subcategory } = require('../models');
+const { Product, Category, SubCategory } = require('../models');
 
 class ProductService {
   // Get all products with pagination and associations
-  async getAllProducts({ offset = 0, limit = 5 } = {}) {
+  async getAllProducts({ offset = 0, limit = 5, subcategoryId } = {}) {
+    const where = {};
+    if (subcategoryId) {
+      where.subCategoryId = subcategoryId; // This matches your model
+    }
     return await Product.findAndCountAll({
+      where,
       offset,
       limit,
       order: [['createdAt', 'DESC']],
       include: [
         { model: Category, as: 'category', attributes: ['id', 'name'] },
-        { model: Subcategory, as: 'subcategory', attributes: ['id', 'name'] }
+        { model: SubCategory, as: 'subCategory', attributes: ['id', 'name'] }
       ]
     });
   }
@@ -19,7 +24,7 @@ class ProductService {
     const product = await Product.findByPk(id, {
       include: [
         { model: Category, as: 'category', attributes: ['id', 'name'] },
-        { model: Subcategory, as: 'subcategory', attributes: ['id', 'name'] }
+        { model: SubCategory, as: 'subCategory', attributes: ['id', 'name'] }
       ]
     });
     return product; // Controller will handle 404 if not found

@@ -1,12 +1,11 @@
 const { Order, OrderItem, Product } = require('../models');
 
 exports.createOrder = async (userId, orderData) => {
-  const { shippingAddress, paymentMethod, phoneNumber, email, items } = orderData;
+  const { shippingAddress, paymentMethod, phoneNumber, email, items, paymentIntentId, paymentStatus } = orderData;
   if (!items || !Array.isArray(items) || items.length === 0) {
     throw new Error('No items to order.');
   }
 
-  // Calculate total and prepare order items
   let total = 0;
   const orderItems = [];
   for (const item of items) {
@@ -28,11 +27,12 @@ exports.createOrder = async (userId, orderData) => {
     {
       userId,
       total,
-      status: 'pending',
+      status: paymentStatus || (paymentMethod === 'card' ? 'paid' : 'pending'),
       shippingAddress,
       paymentMethod,
       phoneNumber,
       email,
+      paymentIntentId: paymentIntentId || null,
       items: orderItems
     },
     { include: [{ model: OrderItem, as: 'items' }] }

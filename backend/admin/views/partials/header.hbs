@@ -1,0 +1,329 @@
+<header class="header header-sticky mb-4 shadow-sm" style="background: var(--cui-header-bg, var(--cui-body-bg));">
+  <div class="container-fluid d-flex align-items-center" style="min-height:64px;">
+    <!-- Sidebar Sections Opener Button -->
+    <button
+      id="openSidebarSections"
+      class="btn rounded-circle d-flex align-items-center justify-content-center me-3"
+      type="button"
+      aria-label="Open Sidebar Sections"
+      style="width:44px;height:44px;">
+      <i class="icon cil-apps fs-4"></i>
+    </button>
+
+    <!-- Main Dashboard Button -->
+    <a href="/admin"
+       class="btn btn-primary d-flex align-items-center gap-2 rounded-pill px-4 fw-semibold shadow-sm"
+       style="font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-size: 1.15rem; letter-spacing: 0.03em; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: background 0.15s, box-shadow 0.15s, transform 0.12s; line-height: 1.1; height:44px; margin-right: 1.5rem; margin-left: 1.5rem; background: linear-gradient(90deg, #2563eb 0%, #4f8cff 100%); border: none;"
+       onmouseover="this.style.background='linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)';this.style.transform='scale(1.045)'"
+       onmouseout="this.style.background='linear-gradient(90deg, #2563eb 0%, #4f8cff 100%)';this.style.transform='';"
+    >
+      <i class="icon cil-speedometer" style="font-size:1.25em;"></i>
+      <span style="font-weight:600; letter-spacing:0.04em; font-family:'Inter', 'Segoe UI', Arial, sans-serif;">
+        hey,Errica
+      </span>
+    </a>
+
+    <!-- Search -->
+    <form class="d-none d-md-flex ms-3 flex-grow-1" role="search" action="/search" method="GET">
+      <input class="form-control border-0 rounded-pill px-4"
+        type="search"
+        name="q"
+        placeholder="Search..."
+        aria-label="Search"
+        style="max-width:250px;">
+    </form>
+
+    <!-- Right Side: Theme Switcher, Notifications, and User -->
+    <ul class="nav align-items-center ms-auto">
+      <!-- Theme Switcher -->
+      <li class="nav-item me-2">
+        <button id="themeSwitcher"
+          class="btn rounded-circle d-flex align-items-center justify-content-center"
+          title="Toggle theme"
+          aria-label="Toggle theme"
+          style="width:40px;height:40px;">
+          <i id="themeIcon" class="icon cil-moon fs-5"></i>
+        </button>
+      </li>
+      <!-- Notifications -->
+      <li class="nav-item dropdown me-2">
+        <a id="notifBell" class="btn rounded-circle position-relative d-flex align-items-center justify-content-center"
+          data-coreui-toggle="dropdown"
+          href="#"
+          role="button"
+          aria-expanded="false"
+          style="width:40px;height:40px;">
+          <i class="icon cil-bell fs-5"></i>
+          <span id="notifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.7rem; display:none;">0</span>
+        </a>
+        <div id="notifMenu" class="dropdown-menu dropdown-menu-end shadow" style="min-width: 18rem;">
+          <div class="dropdown-header fw-semibold">Notifications</div>
+          <div class="dropdown-item text-muted">Loading...</div>
+        </div>
+      </li>
+      <!-- User Dropdown -->
+<li class="nav-item dropdown">
+  <a class="btn rounded-pill d-flex align-items-center"
+     data-coreui-toggle="dropdown"
+     href="#"
+     role="button"
+     aria-expanded="false">
+    <div class="avatar avatar-md bg-primary text-white fw-bold me-2">
+      {{#if user}}{{user.name.[0]}}{{else}}U{{/if}}
+    </div>
+    <span class="d-none d-md-inline fw-semibold">
+      {{#if user}}{{user.name}}{{else}}User{{/if}}
+    </span>
+    <i class="icon cil-caret-bottom ms-1"></i>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end shadow">
+          <li><h6 class="dropdown-header">Account</h6></li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/profile">
+              <i class="icon cil-user fs-5"></i>
+              <span>Profile</span>
+            </a>
+          </li>
+          <li>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/settings">
+              <i class="icon cil-settings fs-5"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+          <li><hr class="dropdown-divider bg-secondary"></li>
+          <li>
+            <form action="/logout" method="POST" style="margin:0;">
+              <button type="submit" class="dropdown-item d-flex align-items-center gap-2 py-2 text-danger" style="width:100%;background:none;border:none;">
+                <i class="icon cil-account-logout fs-5"></i>
+                <span>Logout</span>
+              </button>
+            </form>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</header>
+
+<style>
+/* Sidebar Styles */
+.sidebar-sections-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 260px;
+  background: var(--cui-body-bg, #fff);
+  border-radius: 0 12px 12px 0;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+  z-index: 1040;
+  min-width: 200px;
+  transform: translateX(-110%);
+  transition: transform 0.35s cubic-bezier(.77,0,.18,1);
+  padding-top: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  color: var(--cui-body-color, #212529);
+}
+.sidebar-sections-menu.show {
+  transform: translateX(0);
+}
+.sidebar-sections-menu .dropdown-header {
+  margin-left: 1.2rem;
+}
+.sidebar-sections-menu .dropdown-item {
+  width: 100%;
+  text-align: left;
+  padding-left: 2rem;
+  border-radius: 0 2rem 2rem 0;
+}
+/* Theme Styles */
+body.light-theme {
+  background: #f8fafc !important;
+  color: #222 !important;
+}
+body.light-theme .header,
+body.light-theme .card,
+body.light-theme .dropdown-menu,
+body.light-theme .sidebar-sections-menu {
+  background: #fff !important;
+  color: #222 !important;
+}
+body.dark-theme {
+  background: #18181b !important;
+  color: #f1f5f9 !important;
+}
+body.dark-theme .header,
+body.dark-theme .card,
+body.dark-theme .dropdown-menu,
+body.dark-theme .sidebar-sections-menu {
+  background: #23232b !important;
+  color: #f1f5f9 !important;
+}
+</style>
+<script>
+(function() {
+  // Set initial theme
+  const theme = localStorage.getItem('coreui-theme') ||
+    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.body.classList.add(theme + '-theme');
+
+  document.addEventListener('DOMContentLoaded', function() {
+    // Theme Switcher
+    const btn = document.getElementById('themeSwitcher');
+    const icon = document.getElementById('themeIcon');
+    function updateIcon() {
+      if (!icon) return;
+      icon.classList.toggle('cil-sun', document.body.classList.contains('light-theme'));
+      icon.classList.toggle('cil-moon', document.body.classList.contains('dark-theme'));
+    }
+    function toggleTheme() {
+      const isLight = document.body.classList.contains('light-theme');
+      document.body.classList.toggle('light-theme', !isLight);
+      document.body.classList.toggle('dark-theme', isLight);
+      localStorage.setItem('coreui-theme', isLight ? 'dark' : 'light');
+      updateIcon();
+      if (typeof fetchAndRenderChart === 'function') fetchAndRenderChart();
+    }
+    if (btn && icon) {
+      btn.addEventListener('click', toggleTheme);
+      updateIcon();
+    }
+
+    // Sidebar Sections Menu logic
+    const sidebarOpener = document.getElementById('openSidebarSections');
+    if (sidebarOpener) {
+      sidebarOpener.addEventListener('click', function(e) {
+        e.stopPropagation();
+        document.querySelectorAll('.sidebar-sections-menu').forEach(m => m.remove());
+        const menu = document.createElement('div');
+        menu.className = 'sidebar-sections-menu';
+        menu.innerHTML = `
+          <div class="w-100">
+            <h6 class="dropdown-header mb-2">Dashboard Sections</h6>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/products">
+              <i class="icon cil-box text-info fs-5"></i>
+              <span>Products</span>
+            </a>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/orders">
+              <i class="icon cil-cart text-warning fs-5"></i>
+              <span>Orders</span>
+            </a>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/categories">
+              <i class="icon cil-layers text-success fs-5"></i>
+              <span>Categories</span>
+            </a>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/subcategories">
+              <i class="icon cil-list-rich text-primary fs-5"></i>
+              <span>Subcategories</span>
+            </a>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/users">
+              <i class="icon cil-people text-danger fs-5"></i>
+              <span>Users</span>
+            </a>
+            <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/logout">
+              <i class="icon cil-account-logout text-secondary fs-5"></i>
+              <span>Logout</span>
+            </a>
+          </div>
+        `;
+        document.body.appendChild(menu);
+        setTimeout(() => menu.classList.add('show'), 10);
+        function closeMenuHandler(e) {
+          if (!menu.contains(e.target) && e.target !== sidebarOpener) {
+            menu.classList.remove('show');
+            setTimeout(() => menu.remove(), 350);
+            document.removeEventListener('click', closeMenuHandler);
+            document.removeEventListener('keydown', escHandler);
+          }
+        }
+        function escHandler(e) {
+          if (e.key === 'Escape') {
+            menu.classList.remove('show');
+            setTimeout(() => menu.remove(), 350);
+            document.removeEventListener('click', closeMenuHandler);
+            document.removeEventListener('keydown', escHandler);
+          }
+        }
+        setTimeout(() => {
+          document.addEventListener('click', closeMenuHandler);
+          document.addEventListener('keydown', escHandler);
+        }, 0);
+      });
+    }
+
+    // --- Notification Dropdown: Fetch and render latest notifications ---
+    async function loadNotifications() {
+      const notifMenu = document.getElementById('notifMenu');
+      const notifBadge = document.getElementById('notifBadge');
+      if (!notifMenu) return;
+
+      notifMenu.innerHTML = `
+        <div class="dropdown-header fw-semibold">Notifications</div>
+        <div class="dropdown-item text-muted">Loading...</div>
+      `;
+
+      try {
+        const res = await fetch('/api/notifications');
+        const notifications = await res.json();
+
+        // Update badge
+        if (notifBadge) {
+          notifBadge.style.display = notifications.length ? 'inline-block' : 'none';
+          notifBadge.textContent = notifications.length;
+        }
+
+        // Render notifications
+        if (notifications.length) {
+          notifMenu.innerHTML = `
+            <div class="dropdown-header fw-semibold">Notifications</div>
+            ${notifications.map(n => `
+              <div class="dropdown-item small">
+                <div class="fw-semibold">${n.title || 'Update'}</div>
+                <div class="text-muted small">${n.message}</div>
+                <div class="text-secondary small">${n.time || ''}</div>
+              </div>
+            `).join('')}
+          `;
+        } else {
+          notifMenu.innerHTML = `
+            <div class="dropdown-header fw-semibold">Notifications</div>
+            <div class="dropdown-item text-muted">No new notifications</div>
+          `;
+        }
+      } catch (err) {
+        notifMenu.innerHTML = `
+          <div class="dropdown-header fw-semibold">Notifications</div>
+          <div class="dropdown-item text-danger">Failed to load notifications</div>
+        `;
+      }
+    }
+
+    // Dropdown fallback (works for all dropdowns, including notifications)
+    document.querySelectorAll('[data-coreui-toggle="dropdown"]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const menu = el.nextElementSibling;
+        if (!menu) return;
+        // If this is the notification bell, load notifications
+        if (el.id === 'notifBell') loadNotifications();
+        // Close other open dropdowns
+        document.querySelectorAll('.dropdown-menu.show').forEach(openMenu => {
+          if (openMenu !== menu) openMenu.classList.remove('show');
+        });
+        menu.classList.toggle('show');
+        function closeDropdown(e2) {
+          if (!menu.contains(e2.target) && e2.target !== el) {
+            menu.classList.remove('show');
+            document.removeEventListener('click', closeDropdown);
+          }
+        }
+        setTimeout(() => document.addEventListener('click', closeDropdown), 0);
+      });
+    });
+  });
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>

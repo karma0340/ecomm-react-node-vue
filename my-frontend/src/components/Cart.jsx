@@ -41,7 +41,7 @@ function Cart() {
       return;
     }
     axios
-      .get('http://localhost:3000/api/cart', {
+      .get('http://localhost:3000/api/cart/items', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(res => {
@@ -65,7 +65,7 @@ function Cart() {
     if (!window.confirm('Remove this item from your cart?')) return;
     const token = localStorage.getItem('token');
     axios
-      .delete(`http://localhost:3000/api/cart/${cartItemId}`, {
+      .delete(`http://localhost:3000/api/cart/items/${cartItemId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(() => {
@@ -80,7 +80,7 @@ function Cart() {
     const token = localStorage.getItem('token');
     axios
       .put(
-        `http://localhost:3000/api/cart/${cartItemId}`,
+        `http://localhost:3000/api/cart/items/${cartItemId}`,
         { quantity: newQuantity },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -97,7 +97,7 @@ function Cart() {
     if (!window.confirm('Are you sure you want to clear your cart?')) return;
     const token = localStorage.getItem('token');
     axios
-      .delete('http://localhost:3000/api/cart', {
+      .delete('http://localhost:3000/api/cart/items', {
         headers: { Authorization: `Bearer ${token}` }
       })
       .then(() => setCartItems([]))
