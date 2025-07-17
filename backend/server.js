@@ -7,6 +7,7 @@ const cors = require('cors');
 const exphbs = require('express-handlebars');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
+const fs = require('fs');
 
 const app = express();
 
@@ -19,9 +20,14 @@ app.engine('hbs', exphbs.engine({
   helpers: {
     eq: (a, b) => a === b,
     or: (a, b) => a || b,
-    formatDate: function(value, format) {
+    json: context => JSON.stringify(context),
+    formatDate: function (value, format) {
       if (format === "currency") {
-        return Number(value || 0).toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 });
+        return Number(value || 0).toLocaleString('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0
+        });
       }
       if (!value) return '';
       const d = new Date(value);
@@ -41,8 +47,18 @@ app.engine('hbs', exphbs.engine({
     }
   }
 }));
+
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'admin', 'views'));
+
+// ===== Static Files =====
+// === The most important line for your Vue/Vite assets ===
+app.use('/admin/dist', express.static(path.join(__dirname, 'dist')));
+
+// You can keep this for legacy
+app.use('/dist', express.static(path.join(__dirname, 'dist')));
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== Middleware =====
@@ -55,7 +71,7 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false }
+  cookie: { secure: false } // true if using HTTPS
 }));
 
 // ===== CORS Setup =====
@@ -71,26 +87,49 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== Make user available to all views =====
+// ===== Vite Manifest (optional if using hashes) =====
+const viteManifestPath = path.join(__dirname, 'dist', 'manifest.json');
+let viteManifest = {};
+if (fs.existsSync(viteManifestPath)) {
+  viteManifest = JSON.parse(fs.readFileSync(viteManifestPath, 'utf-8'));
+}
 app.use((req, res, next) => {
-  res.locals.user = req.user || null;
+  res.locals.user = req.session.user || null;
+  res.locals.viteManifest = viteManifest || {};
   next();
 });
 
-// ===== Route Imports =====
+// ===== Sequelize ORM Setup =====
+const db = require('./models');
+const { Op } = require('sequelize');
+
+// ===== isAdmin Middleware =====
+function isAdmin(req, res, next) {
+  if (req.session?.user?.role === 'admin') return next();
+  return res.status(403).render('adminLogin', {
+    layout: 'main',
+    title: 'Admin Login',
+    isAdminLogin: true,
+    error: 'You must be an authenticated admin to view this page.'
+  });
+}
+
+// ===== Internal Route Files =====
 const routes = require('./routes');
 const adminAuthRoutes = require('./admin/routes/adminAuthRoutes');
 const adminDashboardRoutes = require('./admin/routes/adminDashboard');
-const productWebRoutes = require('./admin/routes/productsRoutes');
+const productWebRoutes = require('./admin/routes/productAdminRoutes');
 const orderWebRoutes = require('./admin/routes/ordersRoutes');
 const categoryWebRoutes = require('./admin/routes/categoriesRoutes');
 const subcategoryWebRoutes = require('./admin/routes/subcategoriesRoutes');
-const userWebRoutes = require('./admin/routes/usersRoutes');
+const userWebRoutes = require('./admin/routes/userAdminRoutes'); // SSR Admin
+const userApiRoutes = require('./routes/users'); // API Routes (JSON)
 const notificationsRoutes = require('./admin/routes/notifications');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 
 // ===== API Routes =====
 app.use('/api/auth', routes.authRoutes);
-app.use('/api/users', routes.userRoutes);
+app.use('/api/users', userApiRoutes); // ✅ JSON only
 app.use('/api/categories', routes.categoryRoutes);
 app.use('/api/subcategories', routes.subcategoryRoutes);
 app.use('/api/products', routes.productRoutes);
@@ -98,38 +137,38 @@ app.use('/api/favourites', routes.favouriteRoutes);
 app.use('/api/orders', routes.orderRoutes);
 app.use('/api/protected', routes.protectedRoutes);
 app.use('/api/cart/items', routes.cartItemRoutes);
-
-// ===== Wishlist API Route (Sequelize version) =====
-const wishlistRoutes = require('./routes/wishlistRoutes');
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/notifications', notificationsRoutes);
 
-// ===== Optional Payment Route =====
 try {
   app.use('/api/payment', require('./routes/paymentRoutes'));
 } catch (e) {
   console.warn('Payment routes not found or not used.');
 }
 
-// ===== Admin Panel Auth Routes (Login/Logout) =====
+// ===== Admin Auth Routes =====
 app.use('/admin', adminAuthRoutes);
 
-// ===== Admin Panel Web Routes (Protected) =====
-const isAdmin = require('./middleware/isAdmin');
-app.use('/admin', isAdmin, adminDashboardRoutes);
+// ===== Admin Dashboard Web (Vue + HBS SSR App) =====
+app.use('/admin', adminDashboardRoutes);
+
+// ===== Admin Panel Views (HBS + Vue Hydrated Pages) =====
 app.use('/products', isAdmin, productWebRoutes);
 app.use('/orders', isAdmin, orderWebRoutes);
 app.use('/categories', isAdmin, categoryWebRoutes);
 app.use('/subcategories', isAdmin, subcategoryWebRoutes);
-app.use('/users', isAdmin, userWebRoutes);
+app.use('/users', isAdmin, userWebRoutes); // ✅ SSR admin user page
 
-// ===== Notifications Route for Admin Panel =====
-app.use('/api/notifications', notificationsRoutes);
+// ===== /admin (login redirecting) =====
+app.get('/admin', (req, res) => {
+  return req.session?.user?.role === 'admin'
+    ? res.redirect('/admin/dashboard')
+    : res.redirect('/admin/login');
+});
 
-// ===== SEARCH ROUTE (MySQL compatible) =====
-const { Op } = require('sequelize');
-const db = require('./models');
+// ===== Search =====
 app.get('/search', async (req, res) => {
-  const q = req.query.q ? req.query.q.trim() : '';
+  const q = req.query.q?.trim();
   if (!q) {
     return res.render('searchResults', { title: 'Search', query: '', results: { users: [], products: [] } });
   }
@@ -160,48 +199,50 @@ app.get('/search', async (req, res) => {
     });
   } catch (err) {
     console.error('Search error:', err);
-    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
+    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.session.user });
   }
-});
-
-// ===== Logout Route =====
-app.post('/logout', (req, res) => {
-  req.session.destroy(() => {
-    res.redirect('/admin');
-  });
 });
 
 // ===== 404 Handler =====
 app.use((req, res, next) => {
   if (req.accepts('html')) {
-    return res.status(404).render('404', { layout: 'main', title: 'Not Found', user: req.user });
+    return res.status(404).render('404', {
+      layout: 'main',
+      title: 'Not Found',
+      user: req.session.user
+    });
   }
-  res.status(404).json({ error: 'API endpoint not found' });
+  return res.status(404).json({ error: 'API endpoint not found' });
 });
 
 // ===== 500 Error Handler =====
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   if (req.accepts('html')) {
-    return res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
+    return res.status(500).render('500', {
+      layout: 'main',
+      title: 'Server Error',
+      user: req.session.user
+    });
   }
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== Database Sync & Server Start =====
+// ===== Database Sync & Start =====
 const sequelize = db.sequelize;
+
 sequelize.sync()
   .then(() => {
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Admin panel: http://localhost:${PORT}/admin`);
+      console.log(`✅ Server running on http://localhost:${PORT}`);
+      console.log(`🔐 Admin Panel at → http://localhost:${PORT}/admin`);
     });
   })
   .catch(err => {
-    console.error('Failed to sync database:', err);
+    console.error('⛔ Failed to sync database:', err);
     if (err.original) {
-      console.error('Original error details:', err.original);
+      console.error('Original DB error:', err.original);
     }
   });
 

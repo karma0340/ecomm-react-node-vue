@@ -6,7 +6,6 @@ const Sequelize = require('sequelize');
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || 'development';
 
-// ===== Load Sequelize Config =====
 let config;
 try {
   config = require(path.resolve(__dirname, '../config/config.js'))[env];
@@ -15,7 +14,6 @@ try {
   process.exit(1);
 }
 
-// ===== Initialize Sequelize =====
 let sequelize;
 try {
   if (config.use_env_variable) {
@@ -30,7 +28,6 @@ try {
 
 const db = {};
 
-// ===== Import All Models =====
 fs
   .readdirSync(__dirname)
   .filter(file =>
@@ -40,19 +37,16 @@ fs
     !file.endsWith('.test.js')
   )
   .forEach(file => {
-    // If the model exports a function (standard Sequelize CLI style)
     const model = require(path.join(__dirname, file))(sequelize, Sequelize.DataTypes);
     db[model.name] = model;
   });
 
-// ===== Setup Model Associations =====
 Object.keys(db).forEach(modelName => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
 
-// ===== Export Sequelize and Models =====
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 

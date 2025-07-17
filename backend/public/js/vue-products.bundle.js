@@ -1,0 +1,1 @@
+import{b as t,d as r,e as o,g as s}from"../assets/runtime-dom.esm-bundler-C3ImUYEd.js";const n={__name:"Products",setup(u){return(a,e)=>(r(),t("div",null,e[0]||(e[0]=[o("h2",null,"Products",-1)])))}};s(n).mount("#vue-products");

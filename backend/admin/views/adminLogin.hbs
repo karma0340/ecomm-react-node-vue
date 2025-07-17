@@ -1,27 +1,29 @@
-<div class="container py-5">
-  <div class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h4 class="mb-0">Admin Login</h4>
-        </div>
-        <div class="card-body">
-          <form action="/admin/login" method="POST" autocomplete="off">
-            <div class="mb-3">
-              <label>Email</label>
-              <input type="email" name="email" class="form-control" required autofocus>
-            </div>
-            <div class="mb-3">
-              <label>Password</label>
-              <input type="password" name="password" class="form-control" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Login</button>
-            {{#if error}}
-              <div class="alert alert-danger mt-3">{{error}}</div>
-            {{/if}}
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+
+{{!-- This file renders the admin login form and mounts the Vue component --}}
+
+
+
+<div id="vue-admin-login"></div>
+
+<script>
+  // Pass any server-side error into Vue via a global variable
+  window.__LOGIN_ERROR__ = {{{json error}}};
+</script>
+
+{{!-- Dynamically load the built Vue assets using the Vite manifest --}}
+{{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
+  {{#if bundle.css}}
+    {{#each bundle.css}}
+      <link rel="stylesheet" href="/dist/{{this}}">
+    {{/each}}
+  {{/if}}
+  <script type="module" src="/dist/{{bundle.file}}"></script>
+{{/with}}
+
+
+{{!-- Optionally, add a footer or any additional markup --}}
+{{!--
+<footer style="margin-top:2rem; text-align:center; color:#888;">
+  &copy; {{formatDate (now) "date"}} Your Company Admin Panel
+</footer>
+--}}

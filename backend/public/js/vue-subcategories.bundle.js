@@ -1,0 +1,1 @@
+import{b as e,d as c,g as r}from"../assets/runtime-dom.esm-bundler-C3ImUYEd.js";import{_ as o}from"../assets/_plugin-vue_export-helper-DlAUqK2U.js";const t={};function s(a,_){return c(),e("div")}const n=o(t,[["render",s]]);r(n).mount("#vue-subcategories");

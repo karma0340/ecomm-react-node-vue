@@ -1,40 +1,51 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../models');
-const bcrypt = require('bcrypt');
+const isAdmin = require('../../middleware/isAdmin');
 
-// Helper: Get total orders for a user
-async function getTotalOrdersForUser(userId) {
-  return db.Order.count({ where: { userId } });
-}
+// ===== Render the Dashboard Page (for browser) =====
+router.get('/dashboard', isAdmin, async (req, res) => {
+  let stats = {};
+  let recentUsers = [];
+  try {
+    stats = {
+      users: await db.User.count(),
+      products: await db.Product.count(),
+      categories: await db.Category.count(),
+      subcategories: await db.SubCategory.count(),
+      sales: (await db.Order.sum('total')) || 0
+    };
+    recentUsers = await db.User.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+      raw: true
+    });
+  } catch (err) {
+    console.error('Dashboard SSR data error:', err);
+  }
 
-// Helper: Get recent activities for a user (latest 3, real data)
-async function getRecentActivitiesForUser(userId) {
-  const activities = await db.Activity.findAll({
-    where: { userId },
-    order: [['createdAt', 'DESC']],
-    limit: 3,
-    attributes: ['action', 'createdAt'],
-    raw: true
+  res.render('dashboard', {
+    layout: 'main',
+    title: 'Admin Dashboard',
+    isDashboard: true,
+    stats,
+    recentUsers
   });
-  return activities.map(a => `${a.action} (${new Date(a.createdAt).toLocaleString()})`);
-}
+});
 
-// Helper: Get monthly stats for chart (includes categories and subcategories)
+// ===== Helper: Monthly Stats for Chart (Orders & User Registrations) =====
 async function getMonthlyStats() {
-  // Orders and sales per month (last 12 months)
   const orders = await db.Order.findAll({
     attributes: [
       [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'month'],
       [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'orderCount'],
-      [db.sequelize.fn('SUM', db.sequelize.col('total')), 'sales'] // <-- Make sure 'total' is your sales column!
+      [db.sequelize.fn('SUM', db.sequelize.col('total')), 'sales']
     ],
     group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m')],
     order: [[db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
     raw: true
   });
 
-  // New users per month
   const users = await db.User.findAll({
     attributes: [
       [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'month'],
@@ -45,114 +56,315 @@ async function getMonthlyStats() {
     raw: true
   });
 
-  // Categories per month
-  const categories = await db.Category.findAll({
-    attributes: [
-      [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'month'],
-      [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'categoryCount']
-    ],
-    group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m')],
-    order: [[db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
-    raw: true
-  });
-
-  // Subcategories per month
-  const subcategories = await db.SubCategory.findAll({
-    attributes: [
-      [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'month'],
-      [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'subcategoryCount']
-    ],
-    group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m')],
-    order: [[db.sequelize.fn('DATE_FORMAT', db.sequelize.col('createdAt'), '%Y-%m'), 'ASC']],
-    raw: true
-  });
-
-  // Merge all unique months
   const monthsSet = new Set([
     ...orders.map(o => o.month),
-    ...users.map(u => u.month),
-    ...categories.map(c => c.month),
-    ...subcategories.map(s => s.month)
+    ...users.map(u => u.month)
   ]);
   const months = Array.from(monthsSet).sort();
 
   const orderMap = Object.fromEntries(orders.map(o => [o.month, {
-    orders: parseInt(o.orderCount),
-    sales: parseFloat(o.sales)
+    orders: parseInt(o.orderCount) || 0,
+    sales: parseFloat(o.sales) || 0
   }]));
-  const userMap = Object.fromEntries(users.map(u => [u.month, parseInt(u.userCount)]));
-  const categoryMap = Object.fromEntries(categories.map(c => [c.month, parseInt(c.categoryCount)]));
-  const subcategoryMap = Object.fromEntries(subcategories.map(s => [s.month, parseInt(s.subcategoryCount)]));
+  const userMap = Object.fromEntries(users.map(u => [u.month, parseInt(u.userCount) || 0]));
 
   return {
     labels: months,
-    orders: months.map(m => orderMap[m]?.orders || 0),
-    sales: months.map(m => orderMap[m]?.sales || 0),
-    users: months.map(m => userMap[m] || 0),
-    categories: months.map(m => categoryMap[m] || 0),
-    subcategories: months.map(m => subcategoryMap[m] || 0)
+    orders: months.map(m => orderMap[m]?.orders ?? 0),
+    sales: months.map(m => orderMap[m]?.sales ?? 0),
+    users: months.map(m => userMap[m] ?? 0)
   };
 }
 
-// Admin Dashboard (HTML page)
-router.get('/', async (req, res) => {
+// ===== Helper: Sparkline Data =====
+async function getSparklineData() {
+  const days = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (23 - i));
+    return d.toISOString().slice(0, 10);
+  });
+
+  const salesRaw = await db.Order.findAll({
+    attributes: [
+      [db.sequelize.fn('DATE', db.sequelize.col('createdAt')), 'day'],
+      [db.sequelize.fn('SUM', db.sequelize.col('total')), 'sales']
+    ],
+    where: { createdAt: { [db.Sequelize.Op.gte]: days[0] } },
+    group: [db.sequelize.fn('DATE', db.sequelize.col('createdAt'))],
+    order: [[db.sequelize.fn('DATE', db.sequelize.col('createdAt')), 'ASC']],
+    raw: true
+  });
+  const salesMap = Object.fromEntries(salesRaw.map(r => [r.day, parseFloat(r.sales)]));
+  const sales = days.map(d => salesMap[d] || 0);
+
+  const expenses = sales.map(s => Math.round(s * (0.4 + Math.random() * 0.2)));
+  const profits = sales.map((s, i) => Math.max(0, s - expenses[i]));
+
+  const salesAmount = sales.reduce((a, b) => a + b, 0);
+  const expensesAmount = expenses.reduce((a, b) => a + b, 0);
+  const profitsAmount = profits.reduce((a, b) => a + b, 0);
+
+  return {
+    sales,
+    expenses,
+    profits,
+    salesAmount,
+    expensesAmount,
+    profitsAmount
+  };
+}
+
+// ===== Helper: Bar Data (Monthly Sales by Category) =====
+async function getBarData() {
+  const months = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - (13 - i));
+    return d.toISOString().slice(0, 7);
+  });
+
+  const categories = await db.Category.findAll({ attributes: ['id', 'name'], order: [['id', 'ASC']], raw: true });
+
+  const series = [];
+  for (const cat of categories) {
+    const salesRaw = await db.OrderItem.findAll({
+      include: [
+        {
+          model: db.Product,
+          as: 'product',
+          attributes: [],
+          where: { categoryId: cat.id },
+          required: true
+        },
+        {
+          model: db.Order,
+          as: 'order',
+          attributes: []
+        }
+      ],
+      attributes: [
+        [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('order.createdAt'), '%Y-%m'), 'month'],
+        [db.sequelize.fn('SUM', db.sequelize.col('OrderItem.price')), 'sales']
+      ],
+      group: [db.sequelize.fn('DATE_FORMAT', db.sequelize.col('order.createdAt'), '%Y-%m')],
+      raw: true
+    });
+
+    const salesMap = Object.fromEntries(salesRaw.map(r => [r.month, parseFloat(r.sales)]));
+    series.push({
+      name: cat.name,
+      data: months.map(m => salesMap[m] || 0)
+    });
+  }
+  return { series, months };
+}
+
+// ===== Helper: Donut Data (Category Sales) =====
+async function getDonutData() {
+  const categories = await db.Category.findAll({ attributes: ['id', 'name'], order: [['id', 'ASC']], raw: true });
+
+  const salesRaw = await db.OrderItem.findAll({
+    include: [
+      {
+        model: db.Product,
+        as: 'product',
+        attributes: ['categoryId'],
+        required: true
+      }
+    ],
+    attributes: [
+      [db.sequelize.col('product.categoryId'), 'categoryId'],
+      [db.sequelize.fn('SUM', db.sequelize.col('OrderItem.price')), 'sales']
+    ],
+    group: [db.sequelize.col('product.categoryId')],
+    raw: true
+  });
+
+  const salesMap = Object.fromEntries(salesRaw.map(r => [String(r.categoryId), parseFloat(r.sales)]));
+  const labels = [];
+  const series = [];
+  for (const cat of categories) {
+    labels.push(cat.name);
+    series.push(salesMap[String(cat.id)] || 0);
+  }
+
+  return { series, labels };
+}
+
+// ===== Helper: Area Data (Daily Unique Logins for Admin & User) =====
+async function getAreaData() {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+
+  const roles = ['admin', 'user'];
+  const series = [];
+
+  for (const role of roles) {
+    const counts = await db.UserLogin.findAll({
+      include: [
+        {
+          model: db.User,
+          as: 'user',
+          attributes: [],
+          where: { role },
+          required: true
+        }
+      ],
+      attributes: [
+        [db.sequelize.fn('DATE', db.sequelize.col('UserLogin.createdAt')), 'day'],
+        [db.sequelize.fn('COUNT', db.sequelize.fn('DISTINCT', db.sequelize.col('UserLogin.userId'))), 'count']
+      ],
+      where: {
+        createdAt: { [db.Sequelize.Op.gte]: days[0] }
+      },
+      group: [db.sequelize.fn('DATE', db.sequelize.col('UserLogin.createdAt'))],
+      raw: true
+    });
+
+    const dayMap = Object.fromEntries(counts.map(r => [r.day, parseInt(r.count)]));
+    series.push({
+      name: role === 'admin' ? 'Admin' : 'User',
+      data: days.map(day => ({ x: day, y: dayMap[day] || 0 }))
+    });
+  }
+
+  return { series };
+}
+
+// ===== Helper: Line Data (Multi-line: New, Returning, Total Customers) =====
+async function getLineData() {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+
+  const newCustomers = await db.User.findAll({
+    attributes: [
+      [db.sequelize.fn('DATE', db.sequelize.col('createdAt')), 'day'],
+      [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'count']
+    ],
+    where: { createdAt: { [db.Sequelize.Op.gte]: days[0] } },
+    group: [db.sequelize.fn('DATE', db.sequelize.col('createdAt'))],
+    raw: true
+  });
+
+  const totalCustomers = await db.Order.findAll({
+    attributes: [
+      [db.sequelize.fn('DATE', db.sequelize.col('createdAt')), 'day'],
+      [db.sequelize.fn('COUNT', db.sequelize.fn('DISTINCT', db.sequelize.col('userId'))), 'count']
+    ],
+    where: { createdAt: { [db.Sequelize.Op.gte]: days[0] } },
+    group: [db.sequelize.fn('DATE', db.sequelize.col('createdAt'))],
+    raw: true
+  });
+
+  const newMap = Object.fromEntries(newCustomers.map(r => [r.day, parseInt(r.count)]))
+  const totalMap = Object.fromEntries(totalCustomers.map(r => [r.day, parseInt(r.count)]))
+  const returningMap = {}
+  days.forEach(day => {
+    returningMap[day] = (totalMap[day] || 0) - (newMap[day] || 0)
+  })
+
+  return {
+    series: [
+      { name: "New Customers", data: days.map(day => newMap[day] || 0) },
+      { name: "Returning Customers", data: days.map(day => returningMap[day] || 0) },
+      { name: "Total Customers", data: days.map(day => totalMap[day] || 0) }
+    ],
+    labels: days,
+    subtitle: "Active, new and returning customers in the last 7 days"
+  }
+}
+
+// ===== API: Dashboard Summary Stats =====
+router.get('/dashboard/stats', isAdmin, async (req, res) => {
   try {
-    // Fetch stats from DB
     const [
       usersCount,
       productsCount,
-      ordersCount,
       categoriesCount,
       subcategoriesCount,
-      totalSales,
-      usersRaw
+      salesTotal
     ] = await Promise.all([
       db.User.count(),
       db.Product.count(),
-      db.Order.count(),
       db.Category.count(),
       db.SubCategory.count(),
-      db.Order.sum('total'), // or 'totalAmount' or whatever your sales field is
-      db.User.findAll({
-        attributes: ['id', 'name', 'email', 'role', 'createdAt'],
-        order: [['createdAt', 'DESC']],
-        limit: 10,
-        raw: true
-      })
+      db.Order.sum('total')
     ]);
-
-    // Fetch per-user stats and activities
-    const users = await Promise.all(usersRaw.map(async user => ({
-      ...user,
-      totalOrders: await getTotalOrdersForUser(user.id),
-      activities: await getRecentActivitiesForUser(user.id),
-      registered: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '',
-      new: (new Date() - new Date(user.createdAt)) < 7 * 24 * 60 * 60 * 1000 // New if registered within 7 days
-    })));
-
-    res.render('dashboard', {
-      layout: 'main',
-      title: 'Admin Dashboard',
-      user: req.user || { name: 'Admin' },
-      stats: {
-        users: usersCount,
-        products: productsCount,
-        orders: ordersCount,
-        categories: categoriesCount,
-        subcategories: subcategoriesCount,
-        sales: totalSales || 0
-      },
-      users
-      // Chart data is now fetched by AJAX, not rendered here!
+    res.json({
+      users: usersCount,
+      products: productsCount,
+      categories: categoriesCount,
+      subcategories: subcategoriesCount,
+      sales: salesTotal || 0
     });
   } catch (err) {
-    console.error('Dashboard error:', err);
-    res.status(500).render('500', { layout: 'main', title: 'Server Error' });
+    console.error('Dashboard stats error:', err);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 });
 
-// Chart Data API for AJAX chart
-router.get('/chart-data', async (req, res) => {
+// ===== API: Sparkline Data =====
+router.get('/dashboard/sparkline-data', isAdmin, async (req, res) => {
+  try {
+    const data = await getSparklineData();
+    res.json(data);
+  } catch (err) {
+    console.error('Sparkline data error:', err);
+    res.status(500).json({ error: 'Failed to fetch sparkline data' });
+  }
+});
+
+// ===== API: Bar Data =====
+router.get('/dashboard/bar-data', isAdmin, async (req, res) => {
+  try {
+    const data = await getBarData();
+    res.json(data);
+  } catch (err) {
+    console.error('Bar data error:', err);
+    res.status(500).json({ error: 'Failed to fetch bar data' });
+  }
+});
+
+// ===== API: Donut Data =====
+router.get('/dashboard/donut-data', isAdmin, async (req, res) => {
+  try {
+    const data = await getDonutData();
+    res.json(data);
+  } catch (err) {
+    console.error('Donut data error:', err);
+    res.status(500).json({ error: 'Failed to fetch donut data' });
+  }
+});
+
+// ===== API: Area Data =====
+router.get('/dashboard/area-data', isAdmin, async (req, res) => {
+  try {
+    const data = await getAreaData();
+    res.json(data);
+  } catch (err) {
+    console.error('Area data error:', err);
+    res.status(500).json({ error: 'Failed to fetch area data' });
+  }
+});
+
+// ===== API: Line Data (Customers) =====
+router.get('/dashboard/line-data', isAdmin, async (req, res) => {
+  try {
+    const data = await getLineData();
+    res.json(data);
+  } catch (err) {
+    console.error('Line data error:', err);
+    res.status(500).json({ error: 'Failed to fetch line data' });
+  }
+});
+
+// ===== API: Chart Data (Orders & Users per Month) =====
+router.get('/dashboard/chart-data', isAdmin, async (req, res) => {
   try {
     const chartData = await getMonthlyStats();
     res.json(chartData);
@@ -162,34 +374,18 @@ router.get('/chart-data', async (req, res) => {
   }
 });
 
-// Add User (show form)
-router.get('/users/add', (req, res) => {
-  res.render('userAdd', { layout: 'main', title: 'Add User' });
-});
-
-// Add User (handle form)
-router.post('/users/add', async (req, res) => {
+// ===== API: Recent Customers (for Vue dashboard) =====
+router.get('/dashboard/recent-customers', isAdmin, async (req, res) => {
   try {
-    const { name, email, role, password } = req.body;
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await db.User.create({ name, email, role, password: hashedPassword });
-    res.redirect('/admin');
+    const recentCustomers = await db.User.findAll({
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+      raw: true
+    });
+    res.json(recentCustomers);
   } catch (err) {
-    console.error('Add user error:', err);
-    res.status(500).render('500', { layout: 'main', title: 'Server Error' });
-  }
-});
-
-// Export Users (CSV)
-router.get('/users/export', async (req, res) => {
-  try {
-    const users = await db.User.findAll({ attributes: ['id', 'name', 'email', 'role'], raw: true });
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="users.csv"');
-    res.send('id,name,email,role\n' + users.map(u => `${u.id},${u.name},${u.email},${u.role}`).join('\n'));
-  } catch (err) {
-    console.error('Export users error:', err);
-    res.status(500).send('Failed to export users');
+    console.error('Recent customers error:', err);
+    res.status(500).json([]);
   }
 });
 

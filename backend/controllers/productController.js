@@ -4,15 +4,14 @@ const fs = require('fs');
 const path = require('path');
 const { Product } = require('../models');
 
-// Get all products (paginated)
+// PAGINATED + FILTERED LIST
 exports.getAllProducts = async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = Number.parseInt(req.query.page) || 1;
+    const limit = Number.parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const subcategoryId = req.query.subcategoryId;
 
-    // productService must return { rows, count }
     const { rows, count } = await productService.getAllProducts({ offset, limit, subcategoryId });
 
     res.json({
@@ -27,7 +26,7 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Get a single product by ID
+// GET SINGLE PRODUCT
 exports.getProduct = async (req, res) => {
   try {
     const product = await productService.getProductById(req.params.id);
@@ -41,25 +40,59 @@ exports.getProduct = async (req, res) => {
   }
 };
 
-// Bulk create products with multiple images
+// CREATE PRODUCT(S) -- supports bulk and single, with images or URLs (fully defensive!)
 exports.createProduct = async (req, res) => {
   try {
-    let products = req.body.products;
-    if (!Array.isArray(products)) products = [products];
-    products = products.map(p => typeof p === 'string' ? JSON.parse(p) : p);
+    let rawProducts = req.body.products;
+    let products = [];
 
-    for (const product of products) {
-      if (!product.name || !product.price || !product.categoryId || !product.subCategoryId) {
-        return res.status(400).json({ error: 'Missing required fields in one or more products' });
+    // Support FormData (flat fields) & JSON (array or single object)
+    if (rawProducts) {
+      if (typeof rawProducts === 'string') {
+        try {
+          const parsed = JSON.parse(rawProducts);
+          products = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          products = []; // Bad parse? fallback will fail in validation below
+        }
+      } else if (Array.isArray(rawProducts)) {
+        products = rawProducts;
+      } else {
+        products = [rawProducts];
       }
+    } else {
+      // No 'products' field at all: treat all fields in body as one product
+      products = [{ ...req.body }];
     }
 
+    // If FormData, array fields may come as stringified objects
+    products = products.map(p => (typeof p === 'string' ? JSON.parse(p) : p));
+
     const files = req.files || [];
+
     products.forEach((product, idx) => {
       if (files[idx]) {
         product.imageUrl = `/images/products/${files[idx].filename}`;
       }
     });
+
+    // Validate and cast numeric fields defensively, including stock
+    for (const product of products) {
+      if (
+        !product ||
+        !product.name ||
+        !product.price ||
+        !product.categoryId ||
+        !product.subCategoryId
+      ) {
+        return res.status(400).json({ error: 'Missing required fields in one or more products' });
+      }
+      product.price = Number(product.price);
+      // Ensure stock exists and is numeric, default 0 if blank/non-numeric
+      product.stock = product.stock !== undefined && product.stock !== null && product.stock !== ''
+        ? Number(product.stock)
+        : 0;
+    }
 
     const createdProducts = await Product.bulkCreate(products);
     res.status(201).json(createdProducts);
@@ -69,22 +102,21 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Update a product (with file upload or remote image URL)
+// UPDATE A PRODUCT (with options for file or remote image)
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, description, price, imageUrl, categoryId, subCategoryId } = req.body;
+    const { name, description, price, imageUrl, categoryId, subCategoryId, stock } = req.body;
     const product = await Product.findByPk(req.params.id);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-
     let newImageUrl = product.imageUrl;
 
-    if (req.file) {
+    if (req.file && req.file.filename) {
       newImageUrl = `/images/products/${req.file.filename}`;
-    } else if (imageUrl && imageUrl.startsWith('http')) {
-      // Download remote image
-      const fileExt = path.extname(imageUrl).split('?')[0] || '.jpg';
+    } else if (imageUrl && typeof imageUrl === 'string' && imageUrl.startsWith('http')) {
+      // Download remote image to local
+      const fileExt = path.extname(imageUrl.split('?')[0]) || '.jpg';
       const filename = `${Date.now()}${fileExt}`;
       const localPath = path.join(__dirname, '../public/images/products', filename);
 
@@ -99,7 +131,6 @@ exports.updateProduct = async (req, res) => {
           .on('error', reject)
           .once('close', resolve);
       });
-
       newImageUrl = `/images/products/${filename}`;
     } else if (imageUrl) {
       newImageUrl = imageUrl;
@@ -108,10 +139,14 @@ exports.updateProduct = async (req, res) => {
     await product.update({
       name: name ?? product.name,
       description: description ?? product.description,
-      price: price ?? product.price,
+      price: price !== undefined ? Number(price) : product.price,
       imageUrl: newImageUrl,
       categoryId: categoryId ?? product.categoryId,
-      subCategoryId: subCategoryId ?? product.subCategoryId
+      subCategoryId: subCategoryId ?? product.subCategoryId,
+      // Ensure stock gets updated if provided, otherwise remains as-is
+      stock: stock !== undefined && stock !== null && stock !== ''
+        ? Number(stock)
+        : product.stock
     });
 
     res.json(product);
@@ -121,7 +156,7 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-// Delete a product
+// DELETE PRODUCT
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findByPk(req.params.id);

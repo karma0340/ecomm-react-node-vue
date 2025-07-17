@@ -1,0 +1,97 @@
+{
+  "__plugin-vue_export-helper-DlAUqK2U.js": {
+    "file": "_plugin-vue_export-helper-DlAUqK2U.js",
+    "name": "_plugin-vue_export-helper"
+  },
+  "_runtime-dom.esm-bundler-CKHVjIEV.js": {
+    "file": "runtime-dom.esm-bundler-CKHVjIEV.js",
+    "name": "runtime-dom.esm-bundler"
+  },
+  "src/vue-adminLogin.js": {
+    "file": "vue-adminLogin-BxEM_LSc.js",
+    "name": "vue-adminLogin",
+    "src": "src/vue-adminLogin.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-adminLogin-CU4bkCt2.css"
+    ]
+  },
+  "src/vue-categories.js": {
+    "file": "vue-categories-BVyH3h8a.js",
+    "name": "vue-categories",
+    "src": "src/vue-categories.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-categories-BIpgR2cy.css"
+    ]
+  },
+  "src/vue-dashboard.js": {
+    "file": "vue-dashboard-C8EkkSTP.js",
+    "name": "vue-dashboard",
+    "src": "src/vue-dashboard.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-dashboard-BGHKFwDo.css"
+    ]
+  },
+  "src/vue-orders.js": {
+    "file": "vue-orders-C8OBsCm6.js",
+    "name": "vue-orders",
+    "src": "src/vue-orders.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-orders-D_Vtqkup.css"
+    ]
+  },
+  "src/vue-products.js": {
+    "file": "vue-products-B3p248nz.js",
+    "name": "vue-products",
+    "src": "src/vue-products.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-products-BFeZs3Pg.css"
+    ]
+  },
+  "src/vue-subcategories.js": {
+    "file": "vue-subcategories-Dl1y4TdD.js",
+    "name": "vue-subcategories",
+    "src": "src/vue-subcategories.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js"
+    ]
+  },
+  "src/vue-users.js": {
+    "file": "vue-users-DRPyWZxd.js",
+    "name": "vue-users",
+    "src": "src/vue-users.js",
+    "isEntry": true,
+    "imports": [
+      "_runtime-dom.esm-bundler-CKHVjIEV.js",
+      "__plugin-vue_export-helper-DlAUqK2U.js"
+    ],
+    "css": [
+      "vue-users-Cg4Op-BA.css"
+    ]
+  }
+}

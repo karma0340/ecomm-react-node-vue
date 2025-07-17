@@ -1,5 +1,5 @@
 <aside class="sidebar sidebar-dark sidebar-fixed" id="sidebar">
-  <div class="sidebar-brand d-none d-md-flex">
+  <div class="sidebar-brand d-none d-md-flex justify-content-center align-items-center py-3">
     <a href="/" class="sidebar-brand-full">
       <img src="/logo.svg" alt="Logo" height="40">
     </a>
@@ -111,7 +111,7 @@
       </ul>
     </li>
 
-    <!-- Logout (direct link, not a collapse) -->
+    <!-- Logout -->
     <li class="nav-item mt-2">
       <a class="nav-link nav-link-danger" href="/logout">
         <i class="nav-icon icon cil-account-logout"></i> Logout
@@ -119,3 +119,51 @@
     </li>
   </ul>
 </aside>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css" rel="stylesheet">
+
+<style>
+.sidebar {
+  min-height: 100vh;
+  background: #23232b;
+  box-shadow: 2px 0 8px rgba(0,0,0,0.07);
+}
+.sidebar .sidebar-brand-full img {
+  max-width: 80%;
+  margin: 0 auto;
+  display: block;
+}
+.sidebar .sidebar-nav {
+  margin-top: 1.5rem;
+}
+.sidebar .nav-link {
+  font-size: 1.04em;
+  font-weight: 500;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0 2rem 2rem 0;
+  transition: background 0.13s, color 0.13s;
+}
+.sidebar .nav-link.active, .sidebar .nav-link:hover {
+  background: #2d2d3a;
+  color: #fff;
+}
+.sidebar .nav-link-danger {
+  color: #dc3545 !important;
+}
+.sidebar .nav-link-danger:hover {
+  background: #dc3545 !important;
+  color: #fff !important;
+}
+.sidebar .nav-group-toggle:after {
+  content: '';
+  float: right;
+  margin-left: 0.5em;
+}
+.sidebar .nav-icon {
+  margin-right: 0.7em;
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>

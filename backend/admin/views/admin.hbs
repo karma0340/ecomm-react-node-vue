@@ -1,20 +1,12 @@
-<!-- This just hosts the Vue app -->
+<!-- Vue Dashboard Mount Point -->
 <div id="app"></div>
-<section>
-  <h1>Admin Dashboard</h1>
-  <div class="dashboard-widgets">
-    <!-- Example widgets -->
-    <div class="widget">
-      <h2>Users</h2>
-      <p>{{stats.users}} total users</p>
-    </div>
-    <div class="widget">
-      <h2>Products</h2>
-      <p>{{stats.products}} total products</p>
-    </div>
-    <div class="widget">
-      <h2>Orders</h2>
-      <p>{{stats.orders}} total orders</p>
-    </div>
-  </div>
-</section>
+
+{{!-- Pass initial stats from server to Vue, safely as JSON --}}
+{{#if stats}}
+<script>
+  window.__INITIAL_STATS__ = {{{json stats}}};
+</script>
+{{/if}}
+
+{{!-- Include the Vue dashboard bundle (built by Vite, served from /js/) --}}
+<script src="/js/vue-dashboard.bundle.js"></script>

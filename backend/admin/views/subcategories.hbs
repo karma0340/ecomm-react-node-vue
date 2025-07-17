@@ -1,100 +1,10 @@
-<h2 class="mb-4 fw-bold text-primary">
-  <i class="bi bi-collection"></i> Subcategories Management
-</h2>
-
-<div class="mb-3 d-flex flex-wrap justify-content-between align-items-center">
-  <a href="/subcategories/add" class="btn btn-success shadow-sm mb-2">
-    <i class="bi bi-plus-circle"></i> Add Subcategory
-  </a>
-  <input type="text" id="subcategorySearch" class="form-control" placeholder="Search subcategories..." style="max-width: 300px;" oninput="filterSubcategories()">
-</div>
-
-<div class="card shadow-sm">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0" id="subcategoriesTable">
-        <thead class="table-primary">
-          <tr>
-            <th>#</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Products</th>
-            <th style="min-width:120px;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {{#if subcategories.length}}
-            {{#each subcategories}}
-            <tr>
-              <td>{{this.id}}</td>
-              <td class="fw-semibold">{{this.name}}</td>
-              <td>
-                {{#if this.category}}
-                  <span class="badge bg-info">{{this.category.name}}</span>
-                {{else}}
-                  <span class="text-muted">-</span>
-                {{/if}}
-              </td>
-              <td>
-                {{#if this.productsCount}}
-                  <span class="badge bg-primary">{{this.productsCount}}</span>
-                {{else}}
-                  <span class="text-muted">0</span>
-                {{/if}}
-              </td>
-              <td>
-                <a href="/subcategories/{{this.id}}/edit" class="btn btn-sm btn-primary me-1">
-                  <i class="bi bi-pencil"></i> Edit
-                </a>
-                <form action="/subcategories/{{this.id}}/delete" method="POST" style="display:inline;">
-                  <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this subcategory?')">
-                    <i class="bi bi-trash"></i>
-                  </button>
-                </form>
-              </td>
-            </tr>
-            {{/each}}
-          {{else}}
-            <tr>
-              <td colspan="5" class="text-center text-muted">No subcategories found.</td>
-            </tr>
-          {{/if}}
-        </tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<!-- Bootstrap 5 Icons (if not already included in your layout) -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-
 <script>
-function filterSubcategories() {
-  const input = document.getElementById('subcategorySearch').value.toLowerCase();
-  const rows = document.querySelectorAll('#subcategoriesTable tbody tr');
-  rows.forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(input) ? '' : 'none';
-  });
-}
+  window.__INITIAL_SUBCATEGORIES__ = {{{json subcategories}}};
+  window.__INITIAL_CATEGORIES__ = {{{json categories}}};
 </script>
 
-<style>
-body {
-  background: #f6f7fb;
-}
-.card {
-  margin-top: 32px;
-  border-radius: 12px;
-}
-.table th, .table td {
-  vertical-align: middle;
-}
-.badge {
-  font-size: 0.95em;
-}
-#subcategorySearch:focus {
-  box-shadow: 0 0 0 0.15rem #0d6efd33;
-  border-color: #0d6efd;
-}
-</style>
+<div id="vue-subcategories-app">Loading...</div>
+
+{{#if vueScript}}
+  <script type="module" src="{{vueScript}}"></script>
+{{/if}}

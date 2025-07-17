@@ -41,6 +41,9 @@ exports.login = async (req, res) => {
       timestamp: new Date()
     });
 
+    // ✅ Log the login event for daily insights!
+    await db.UserLogin.create({ userId: user.id });
+
     // Set JWT as HttpOnly cookie
     res.cookie('token', token, {
       httpOnly: true,

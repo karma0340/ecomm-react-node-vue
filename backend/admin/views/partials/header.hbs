@@ -19,7 +19,7 @@
     >
       <i class="icon cil-speedometer" style="font-size:1.25em;"></i>
       <span style="font-weight:600; letter-spacing:0.04em; font-family:'Inter', 'Segoe UI', Arial, sans-serif;">
-        hey,Errica
+        hey,{{#if user}}{{user.name}}{{else}}Errica{{/if}}
       </span>
     </a>
 
@@ -62,21 +62,21 @@
         </div>
       </li>
       <!-- User Dropdown -->
-<li class="nav-item dropdown">
-  <a class="btn rounded-pill d-flex align-items-center"
-     data-coreui-toggle="dropdown"
-     href="#"
-     role="button"
-     aria-expanded="false">
-    <div class="avatar avatar-md bg-primary text-white fw-bold me-2">
-      {{#if user}}{{user.name.[0]}}{{else}}U{{/if}}
-    </div>
-    <span class="d-none d-md-inline fw-semibold">
-      {{#if user}}{{user.name}}{{else}}User{{/if}}
-    </span>
-    <i class="icon cil-caret-bottom ms-1"></i>
-  </a>
-  <ul class="dropdown-menu dropdown-menu-end shadow">
+      <li class="nav-item dropdown">
+        <a class="btn rounded-pill d-flex align-items-center"
+           data-coreui-toggle="dropdown"
+           href="#"
+           role="button"
+           aria-expanded="false">
+          <div class="avatar avatar-md bg-primary text-white fw-bold me-2">
+            {{#if user}}{{user.name.[0]}}{{else}}U{{/if}}
+          </div>
+          <span class="d-none d-md-inline fw-semibold">
+            {{#if user}}{{user.name}}{{else}}User{{/if}}
+          </span>
+          <i class="icon cil-caret-bottom ms-1"></i>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-end shadow">
           <li><h6 class="dropdown-header">Account</h6></li>
           <li>
             <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="/profile">
@@ -104,6 +104,9 @@
     </ul>
   </div>
 </header>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css" rel="stylesheet">
 
 <style>
 /* Sidebar Styles */

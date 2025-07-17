@@ -1,43 +1,109 @@
-// admin/routes/adminAuthRoutes.js
 const express = require('express');
 const router = express.Router();
-const db = require('../../models');
 const bcrypt = require('bcrypt');
+const db = require('../../models'); // Import db to access UserLogin and User
+const { User } = db; // Use User from db
 
 // GET: Admin Login Page
 router.get('/login', (req, res) => {
-  res.render('adminLogin', { layout: 'main', title: 'Admin Login', hideHeader: true });
+  res.render('adminLogin', {
+    layout: 'main',
+    title: 'Admin Login',
+    isAdminLogin: true,
+    error: req.flash ? req.flash('error') : null
+  });
 });
 
-// POST: Handle Admin Login
+// POST: Admin Login Handler
 router.post('/login', async (req, res) => {
+  console.log('Login attempt:', req.body);
+
+  // Accept login, username, or email as the login field
+  const login = req.body.login || req.body.username || req.body.email;
+  const password = req.body.password;
+
+  if (!login || !password) {
+    console.log('Missing login or password');
+    return res.status(400).render('adminLogin', {
+      layout: 'main',
+      title: 'Admin Login',
+      isAdminLogin: true,
+      error: 'Email/Username and password are required.'
+    });
+  }
+
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login);
   try {
-    const { email, password } = req.body;
-    const user = await db.User.findOne({ where: { email, role: 'admin' } });
+    // Find user by email or username
+    const user = await User.findOne({
+      where: isEmail ? { email: login } : { username: login }
+    });
+
+    console.log('User found:', user ? user.username : 'No user');
 
     if (!user) {
-      return res.render('adminLogin', { layout: 'main', error: 'Invalid credentials', hideHeader: true });
+      return res.status(401).render('adminLogin', {
+        layout: 'main',
+        title: 'Admin Login',
+        isAdminLogin: true,
+        error: 'Invalid credentials.'
+      });
     }
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.render('adminLogin', { layout: 'main', error: 'Invalid credentials', hideHeader: true });
+    // Compare entered password with stored hashed password
+    const validPassword = await bcrypt.compare(password, user.password);
+    console.log('Password valid:', validPassword);
+
+    if (!validPassword) {
+      return res.status(401).render('adminLogin', {
+        layout: 'main',
+        title: 'Admin Login',
+        isAdminLogin: true,
+        error: 'Invalid credentials.'
+      });
     }
 
-    req.session.userId = user.id;
-    req.session.role = user.role;
-    // Optionally, set req.user for use in templates
-    req.user = { id: user.id, name: user.name, email: user.email, role: user.role };
+    console.log('User role:', user.role);
 
-    res.redirect('/admin');
+    if (user.role !== 'admin') {
+      return res.status(403).render('adminLogin', {
+        layout: 'main',
+        title: 'Admin Login',
+        isAdminLogin: true,
+        error: 'Access denied. Admins only.'
+      });
+    }
+
+    // Success: set session
+    req.session.user = {
+      id: user.id,
+      username: user.username,
+      role: user.role
+    };
+
+    // ✅ Log the admin login for daily insights!
+    try {
+      await db.UserLogin.create({ userId: user.id });
+    } catch (e) {
+      console.error('Failed to log admin login:', e);
+      // Do not block login if logging fails
+    }
+
+    console.log('Admin login successful:', user.username);
+    return res.redirect('/admin/dashboard');
   } catch (err) {
     console.error('Admin login error:', err);
-    res.status(500).render('adminLogin', { layout: 'main', error: 'Server error. Please try again.', hideHeader: true });
+    return res.status(500).render('adminLogin', {
+      layout: 'main',
+      title: 'Admin Login',
+      isAdminLogin: true,
+      error: 'Server error. Please try again.'
+    });
   }
 });
 
-// GET: Admin Logout
-router.get('/logout', (req, res) => {
+// POST: Admin Logout
+router.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/admin/login');
   });

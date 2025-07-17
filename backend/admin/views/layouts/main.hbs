@@ -4,9 +4,10 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no">
-    <meta name="description" content="CoreUI Admin Panel">
-    <meta name="author" content="Your Name or Company">
+    <meta name="ecommerce" content="CoreUI Admin Panel">
+    <meta name="tyagi" content="Errica">
     <title>{{title}}</title>
+
     <!-- Favicons -->
     <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
     <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
@@ -21,18 +22,44 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/manifest.json">
+    {{!-- <link rel="manifest" href="/manifest.json"> --}}
     <meta name="msapplication-TileColor" content="#ffffff">
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
 
     <!-- CoreUI CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css">
-    <link rel="stylesheet" crossorigin href="/assets/index-B7wyATDz.css">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- CoreUI Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/icons@3.0.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+    {{!-- Dynamically load Vite CSS from manifest --}}
+    {{#if viteManifest}}
+      {{#if isAdminLogin}}
+        {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
+          {{#if bundle.css}}
+            {{#each bundle.css}}
+              <link rel="stylesheet" href="/dist/{{this}}">
+            {{/each}}
+          {{/if}}
+        {{/with}}
+      {{/if}}
+      {{#if isDashboard}}
+        {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
+          {{#if bundle.css}}
+            {{#each bundle.css}}
+              <link rel="stylesheet" href="/dist/{{this}}">
+            {{/each}}
+          {{/if}}
+        {{/with}}
+      {{/if}}
+    {{/if}}
+
     {{{styles}}}
 
-    <!-- Theme CSS: Use variables for backgrounds and text, and fix all text/table/small/muted/secondary visibility -->
+    <!-- Theme and Table Fixes (unchanged) -->
     <style>
       body.light-theme {
         --cui-body-bg: #f8fafc;
@@ -71,14 +98,12 @@
       .text-white-50 {
         color: #bdbdbd !important;
       }
-      /* Muted and secondary text for both themes */
       .text-muted, small, .small {
         color: var(--cui-muted-color, #6c757d) !important;
       }
       .text-secondary {
         color: var(--cui-secondary-color, #495057) !important;
       }
-      /* TABLE VISIBILITY FIXES */
       body.light-theme .table,
       body.light-theme .table th,
       body.light-theme .table td {
@@ -111,21 +136,47 @@
       body.dark-theme .table-hover > tbody > tr:hover {
         background-color: #1a1a1f !important;
       }
-      /* End of table fixes */
     </style>
   </head>
   <body>
     <noscript>
       <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
     </noscript>
-    {{#unless hideHeader}}
+
+    {{#unless isAdminLogin}}
       {{> header}}
     {{/unless}}
+
     <main>
       {{{body}}}
     </main>
+
+    {{#unless isAdminLogin}}
+      {{> footer}}
+    {{/unless}}
+
+    <!-- CoreUI JS -->
     <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>
-    <script type="module" src="/assets/index-ZPsCKTGd.js"></script>
+
+    {{!-- Load Chart.js only for dashboard --}}
+    {{#if isDashboard}}
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{/if}}
+
+    {{!-- Dynamically load Vite JS from manifest --}}
+    {{#if viteManifest}}
+      {{#if isAdminLogin}}
+        {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
+          <script type="module" src="/dist/{{bundle.file}}"></script>
+        {{/with}}
+      {{/if}}
+      {{#if isDashboard}}
+        {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
+          <script type="module" src="/dist/{{bundle.file}}"></script>
+        {{/with}}
+      {{/if}}
+    {{/if}}
+
     {{{scripts}}}
   </body>
 </html>

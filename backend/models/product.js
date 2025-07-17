@@ -14,26 +14,45 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       references: { model: 'Categories', key: 'id' }
     },
-subCategoryId: {
-  type: DataTypes.INTEGER,
-  allowNull: false,
-  references: { model: 'SubCategories', key: 'id' } // Table name should match your migration/model
-}
-,
+    subCategoryId: {
+      type: DataTypes.INTEGER,
+      allowNull: true, // allow null for optional subcategory
+      references: { model: 'SubCategories', key: 'id' }
+    },
     imageUrl: {
       type: DataTypes.STRING,
-      allowNull: true,
+      allowNull: true
+    },
+    stock: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive'),
+      allowNull: false,
+      defaultValue: 'inactive'
     }
     // Add other fields as needed
   }, {
-    tableName: 'Products', // Ensure table name is set if needed
-    underscored: false,    // Set to true if you use snake_case in DB
-    timestamps: true       // Set to false if you don't want createdAt/updatedAt
+    tableName: 'Products',
+    underscored: false,
+    timestamps: true
   });
 
   Product.associate = function(models) {
-    Product.belongsTo(models.Category, { foreignKey: 'categoryId', as: 'category' });
-    Product.belongsTo(models.SubCategory, { foreignKey: 'subCategoryId', as: 'subCategory' });
+    Product.belongsTo(models.Category, {
+      foreignKey: 'categoryId',
+      as: 'category'
+    });
+    Product.belongsTo(models.SubCategory, {
+      foreignKey: 'subCategoryId',
+      as: 'subCategory'
+    });
+    Product.hasMany(models.OrderItem, {
+      foreignKey: 'productId',
+      as: 'orderItems'
+    });
   };
 
   return Product;

@@ -4,16 +4,20 @@ const path = require('path');
 // Get all categories with pagination
 exports.getAllCategories = async (req, res) => {
   try {
-    // Get page and limit from query, default to 5 per page
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 5;
     const offset = (page - 1) * limit;
 
-    // Get paginated categories from service
     const { rows, count } = await categoryService.getAllCategories({ offset, limit });
 
+    // Ensure every category has an imageUrl (default if missing)
+    const categories = rows.map(cat => ({
+      ...cat.dataValues,
+      imageUrl: cat.imageUrl || '/images/default-category.jpg'
+    }));
+
     res.json({
-      categories: rows,
+      categories,
       total: count,
       page,
       totalPages: Math.ceil(count / limit)

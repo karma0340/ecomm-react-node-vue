@@ -1,7 +1,7 @@
 {
   "name": "ecommerce",
   "version": "1.0.0",
-  "description": "",
+  "description": "This is the backend for the E-Commerce Web Application, built with Node.js, Express.js, and MySQL (via Sequelize ORM). It provides RESTful APIs for user authentication, product management, cart, orders, wishlist, and admin functionalities.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -32,6 +32,7 @@
     "node-cron": "^4.2.0",
     "nodemailer": "^7.0.4",
     "sequelize": "^6.37.7",
+    "socket.io": "^4.8.1",
     "stripe": "^18.2.1"
   },
   "devDependencies": {

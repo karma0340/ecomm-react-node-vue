@@ -1,12 +1,15 @@
 'use strict';
 const { Model } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class OrderItem extends Model {
     static associate(models) {
+      // Use 'as' values for all associations
       OrderItem.belongsTo(models.Order, { foreignKey: 'orderId', as: 'order' });
       OrderItem.belongsTo(models.Product, { foreignKey: 'productId', as: 'product' });
     }
   }
+
   OrderItem.init(
     {
       orderId: { type: DataTypes.INTEGER, allowNull: false },
@@ -16,7 +19,13 @@ module.exports = (sequelize, DataTypes) => {
       productName: { type: DataTypes.STRING, allowNull: false },
       productImage: { type: DataTypes.STRING }
     },
-    { sequelize, modelName: 'OrderItem', tableName: 'OrderItems', timestamps: true }
+    {
+      sequelize,
+      modelName: 'OrderItem',
+      tableName: 'OrderItems',
+      timestamps: true
+    }
   );
+
   return OrderItem;
 };
