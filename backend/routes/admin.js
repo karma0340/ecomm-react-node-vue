@@ -1,139 +1,90 @@
-// const express = require('express');
-// const router = express.Router();
-// const db = require('../models');
-// const { Op, fn, col } = require('sequelize');
-// const authJwt = require('../middleware/authJwt');
-// const isAdmin = require('../middleware/isAdmin');
+'use strict';
 
-// // Admin dashboard route: GET /admin
-// router.get('/', authJwt, isAdmin, async (req, res) => {
-//   try {
-//     // Dashboard stats
-//     const stats = {
-//       users: await db.User.count(),
-//       products: await db.Product.count(),
-//       orders: await db.Order.count()
-//     };
+const express = require('express');
+const router = express.Router();
+const Fuse = require('fuse.js'); // Fuzzy search
+const db = require('../models'); // Adjust path if needed
+const { Op } = require('sequelize');
 
-//     // Chart data for the current year
-//     const currentYear = new Date().getFullYear();
-//     const months = [
-//       'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
-//       'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-//     ];
+// ===== isAdmin Middleware =====
+function isAdmin(req, res, next) {
+  if (req.session?.user?.role === 'admin') return next();
+  return res.status(403).render('adminLogin', {
+    layout: 'main',
+    title: 'Admin Login',
+    isAdminLogin: true,
+    error: 'You must be an authenticated admin to view this page.'
+  });
+}
 
-//     // Orders per month
-//     const ordersPerMonthRaw = await db.Order.findAll({
-//       attributes: [
-//         [fn('MONTH', col('createdAt')), 'month'],
-//         [fn('COUNT', col('id')), 'count']
-//       ],
-//       where: {
-//         createdAt: {
-//           [Op.gte]: new Date(`${currentYear}-01-01`),
-//           [Op.lt]: new Date(`${currentYear + 1}-01-01`)
-//         }
-//       },
-//       group: [fn('MONTH', col('createdAt'))],
-//       order: [[fn('MONTH', col('createdAt')), 'ASC']]
-//     });
-//     const ordersPerMonth = Array(12).fill(0);
-//     ordersPerMonthRaw.forEach(row => {
-//       const monthIdx = parseInt(row.get('month'), 10) - 1;
-//       ordersPerMonth[monthIdx] = parseInt(row.get('count'), 10);
-//     });
+// ===== Admin Panel Views (SSR) =====
+const productWebRoutes = require('../admin/routes/productAdminRoutes');
+const orderWebRoutes = require('../admin/routes/ordersRoutes');
+const categoryWebRoutes = require('../admin/routes/categoriesRoutes');
+const subcategoryWebRoutes = require('../admin/routes/subcategoriesRoutes');
+const userWebRoutes = require('../admin/routes/userAdminRoutes');
 
-//     // Sales per month (sum of order totals)
-//     const salesPerMonthRaw = await db.Order.findAll({
-//       attributes: [
-//         [fn('MONTH', col('createdAt')), 'month'],
-//         [fn('SUM', col('total')), 'total']
-//       ],
-//       where: {
-//         createdAt: {
-//           [Op.gte]: new Date(`${currentYear}-01-01`),
-//           [Op.lt]: new Date(`${currentYear + 1}-01-01`)
-//         }
-//       },
-//       group: [fn('MONTH', col('createdAt'))],
-//       order: [[fn('MONTH', col('createdAt')), 'ASC']]
-//     });
-//     const salesPerMonth = Array(12).fill(0);
-//     salesPerMonthRaw.forEach(row => {
-//       const monthIdx = parseInt(row.get('month'), 10) - 1;
-//       salesPerMonth[monthIdx] = parseFloat(row.get('total')) || 0;
-//     });
+router.use('/products', isAdmin, productWebRoutes);
+router.use('/orders', isAdmin, orderWebRoutes);
+router.use('/categories', isAdmin, categoryWebRoutes);
+router.use('/subcategories', isAdmin, subcategoryWebRoutes);
+router.use('/users', isAdmin, userWebRoutes);
 
-//     // New users per month
-//     const usersPerMonthRaw = await db.User.findAll({
-//       attributes: [
-//         [fn('MONTH', col('createdAt')), 'month'],
-//         [fn('COUNT', col('id')), 'count']
-//       ],
-//       where: {
-//         createdAt: {
-//           [Op.gte]: new Date(`${currentYear}-01-01`),
-//           [Op.lt]: new Date(`${currentYear + 1}-01-01`)
-//         }
-//       },
-//       group: [fn('MONTH', col('createdAt'))],
-//       order: [[fn('MONTH', col('createdAt')), 'ASC']]
-//     });
-//     const usersPerMonth = Array(12).fill(0);
-//     usersPerMonthRaw.forEach(row => {
-//       const monthIdx = parseInt(row.get('month'), 10) - 1;
-//       usersPerMonth[monthIdx] = parseInt(row.get('count'), 10);
-//     });
+// ===== /admin Root Redirect =====
+router.get('/', (req, res) => {
+  return req.session?.user?.role === 'admin'
+    ? res.redirect('/admin/dashboard')
+    : res.redirect('/admin/login');
+});
 
-//     // Fetch users with their orders and their 3 most recent activities
-//     const dbUsers = await db.User.findAll({
-//       include: [
-//         {
-//           model: db.Order,
-//           as: 'orders',
-//           required: false
-//         },
-//         {
-//           model: db.Activity,
-//           as: 'activities',
-//           required: false,
-//           limit: 3,
-//           order: [['createdAt', 'DESC']]
-//         }
-//       ]
-//     });
+// ===== Fuzzy Search Implementation =====
+router.get('/search', async (req, res) => {
+  const q = req.query.q?.trim() || '';
+  if (!q) {
+    return res.render('searchResults', { title: 'Search', query: '', results: { users: [], products: [] } });
+  }
+  try {
+    // Fetch all for in-memory filtering (add .limit(N) for huge DBs)
+    const [users, products] = await Promise.all([
+      db.User.findAll({ raw: true }),
+      db.Product.findAll({ raw: true })
+    ]);
 
-//     // Map users for dashboard table
-//     const users = dbUsers.map(u => ({
-//       user: {
-//         name: u.name || u.username,
-//         username: u.username,
-//         email: u.email,
-//         role: u.role,
-//         totalOrders: u.orders ? u.orders.length : 0,
-//         new: u.isNew || false,
-//         registered: u.createdAt ? u.createdAt.toLocaleDateString() : ''
-//       },
-//       activities: (u.activities && u.activities.length)
-//         ? u.activities.map(a => `${a.action} (${a.createdAt.toLocaleString()})`)
-//         : ['No recent activity']
-//     }));
+    // USERS fuzzy search
+    const userFuse = new Fuse(users, {
+      keys: ['name', 'email'],
+      threshold: 0.38,
+    });
+    const fuzzyUsers = q ? userFuse.search(q).map(r => r.item) : [];
 
-//     res.render('dashboard', {
-//       layout: 'main',
-//       title: 'Admin Dashboard',
-//       user: req.user,
-//       stats,
-//       users,
-//       chartLabels: JSON.stringify(months),
-//       chartOrders: JSON.stringify(ordersPerMonth),
-//       chartSales: JSON.stringify(salesPerMonth),
-//       chartUsers: JSON.stringify(usersPerMonth)
-//     });
-//   } catch (err) {
-//     console.error('Error rendering admin dashboard:', err);
-//     res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
-//   }
-// });
+    // PRODUCTS fuzzy search
+    const productFuse = new Fuse(products, {
+      keys: ['name', 'description', 'category'],
+      threshold: 0.38,
+    });
+    const fuzzyProducts = q ? productFuse.search(q).map(r => r.item) : [];
 
-// module.exports = router;
+    res.render('searchResults', {
+      title: 'Search Results',
+      query: q,
+      results: { users: fuzzyUsers, products: fuzzyProducts }
+    });
+  } catch (err) {
+    console.error('Search error:', err);
+    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.session.user });
+  }
+});
+
+// ===== 404 Handler (for this router) =====
+router.use((req, res, next) => {
+  if (req.accepts('html')) {
+    return res.status(404).render('404', {
+      layout: 'main',
+      title: 'Not Found',
+      user: req.session.user
+    });
+  }
+  return res.status(404).json({ error: 'API endpoint not found' });
+});
+
+module.exports = router;

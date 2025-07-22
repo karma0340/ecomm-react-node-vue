@@ -11,3 +11,68 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* === THEME SUPPORT FOR HEADER THEME SWITCHER === */
+
+html, body, #root {
+  background: var(--app-bg, #fff);
+  color: var(--app-text, #1a1a1a);
+  transition: background .26s, color .19s;
+}
+
+/* Cards, forms, search, dropdown: inherit theme */
+.card,
+.shadow-sm,
+.bg-light,
+.form-control,
+.rounded-4,
+.dropdown-menu {
+  background: var(--card-bg, #fbfbfb) !important;
+  color: var(--app-text, #1a1a1a) !important;
+  border-color: var(--nav-border, #e1e1e1) !important;
+}
+
+/* Inputs etc. */
+input,
+select,
+textarea {
+  background: var(--input-bg, #f5f7fa) !important;
+  color: var(--app-text, #1a1a1a) !important;
+}
+
+/* Primary button color matches theme */
+.btn-primary {
+  background: var(--primary, #4955f6) !important;
+  border-color: var(--primary, #4955f6) !important;
+}
+
+a, .nav-link, .dropdown-item {
+  color: var(--app-text, #1a1a1a);
+}
+
+a:hover, .nav-link:hover, .dropdown-item:hover {
+  color: var(--primary, #4955f6);
+}
+
+::-webkit-scrollbar {
+  background: var(--input-bg, #ebecec);
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--nav-border, #e1e1e1);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary, #4955f6);
+}
+
+/* Optional: improve focus ring and border for dark/grey */
+input:focus, select:focus, .form-control:focus {
+  border-color: var(--primary, #4955f6) !important;
+  box-shadow: 0 0 0 0.13rem var(--primary, #4955f6)44 !important;
+}
+
+/* Optional: dropdown pop effect for theme contrast */
+.dropdown-menu {
+  box-shadow: 0 4px 24px 0 rgba(44,39,56,0.07), 0 1.5px 8px 0 rgba(109,109,109,0.04);
+}

@@ -20,6 +20,7 @@ export default defineConfig({
         'vue-categories': 'src/vue-categories.js',
         'vue-subcategories': 'src/vue-subcategories.js',
         'vue-users': 'src/vue-users.js'
+        
         // Add more entries as needed
       }
     }

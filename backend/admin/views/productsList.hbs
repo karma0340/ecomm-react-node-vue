@@ -1,0 +1,13 @@
+<h2>
+  {{#if query}}Products matching "{{query}}"{{else}}All Products{{/if}}
+</h2>
+<ul>
+  {{#each products}}
+    <li>
+      <a href="/products/{{this.id}}"><strong>{{this.name}}</strong></a>
+      {{#if this.price}} – ₹{{this.price}}{{/if}}
+      {{#if this.category}} ({{this.category}}){{/if}}
+    </li>
+  {{/each}}
+</ul>
+{{#unless products.length}}<p>No products found{{#if query}} matching "{{query}}"{{/if}}.</p>{{/unless}}

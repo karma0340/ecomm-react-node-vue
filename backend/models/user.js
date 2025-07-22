@@ -57,12 +57,27 @@ module.exports = (sequelize, DataTypes) => {
           len: { args: [2, 50], msg: 'Name must be 2-50 characters' }
         }
       },
+      phone: { // <---- phone field added here!
+        type: DataTypes.STRING(30),
+        allowNull: true,
+        validate: {
+          len: { args: [5, 30], msg: 'phone number should be 5-30 digits' }
+        }
+      },
       role: {
         type: DataTypes.ENUM('user', 'admin'),
         allowNull: false,
         defaultValue: 'user'
       },
-      // --- Add these fields for password reset ---
+
+      // --- Avatar / profile picture ---
+      avatar: {
+        type: DataTypes.STRING,
+        allowNull: true
+        // You could add a validate: { isUrl: true } if all avatars are full URLs, else leave as-is.
+      },
+
+      // --- Password reset fields ---
       resetPasswordToken: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -77,7 +92,7 @@ module.exports = (sequelize, DataTypes) => {
       modelName: 'User',
       tableName: 'Users',
       timestamps: true,
-      paranoid: true, // Enables soft deletes (adds deletedAt column)
+      paranoid: true, // Enables soft deletes (deletedAt)
       indexes: [
         { unique: true, fields: ['email'] },
         { unique: true, fields: ['username'] }

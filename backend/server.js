@@ -8,10 +8,14 @@ const exphbs = require('express-handlebars');
 const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const fs = require('fs');
+const sharp = require('sharp');
+const db = require('./models');
+const getUpload = require('./middleware/upload');
 
+// === Express app setup ===
 const app = express();
 
-// ===== View Engine & Static Files =====
+// === View Engine & Static Files ===
 app.engine('hbs', exphbs.engine({
   extname: '.hbs',
   layoutsDir: path.join(__dirname, 'admin', 'views', 'layouts'),
@@ -45,49 +49,48 @@ app.engine('hbs', exphbs.engine({
         minute: '2-digit'
       });
     }
+  },
+  runtimeOptions: {
+    allowProtoPropertiesByDefault: true,
+    allowProtoMethodsByDefault: true
   }
 }));
-
 app.set('view engine', 'hbs');
 app.set('views', path.join(__dirname, 'admin', 'views'));
 
-// ===== Static Files =====
-// === The most important line for your Vue/Vite assets ===
+// === Static Files ===
 app.use('/admin/dist', express.static(path.join(__dirname, 'dist')));
-
-// You can keep this for legacy
 app.use('/dist', express.static(path.join(__dirname, 'dist')));
-
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ===== Middleware =====
+// === Middleware ===
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ===== Session Setup =====
+// === Session Setup ===
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // true if using HTTPS
+  cookie: { secure: false }
 }));
 
-// ===== CORS Setup =====
+// === CORS Setup ===
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
   credentials: true,
   optionsSuccessStatus: 200
 }));
 
-// ===== Logging Middleware =====
+// === Logging ===
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });
 
-// ===== Vite Manifest (optional if using hashes) =====
+// === Vite Manifest Support ===
 const viteManifestPath = path.join(__dirname, 'dist', 'manifest.json');
 let viteManifest = {};
 if (fs.existsSync(viteManifestPath)) {
@@ -99,11 +102,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== Sequelize ORM Setup =====
-const db = require('./models');
-const { Op } = require('sequelize');
-
-// ===== isAdmin Middleware =====
+// ===== Middlewares: Auth Helpers =====
 function isAdmin(req, res, next) {
   if (req.session?.user?.role === 'admin') return next();
   return res.status(403).render('adminLogin', {
@@ -114,22 +113,17 @@ function isAdmin(req, res, next) {
   });
 }
 
-// ===== Internal Route Files =====
-const routes = require('./routes');
-const adminAuthRoutes = require('./admin/routes/adminAuthRoutes');
-const adminDashboardRoutes = require('./admin/routes/adminDashboard');
-const productWebRoutes = require('./admin/routes/productAdminRoutes');
-const orderWebRoutes = require('./admin/routes/ordersRoutes');
-const categoryWebRoutes = require('./admin/routes/categoriesRoutes');
-const subcategoryWebRoutes = require('./admin/routes/subcategoriesRoutes');
-const userWebRoutes = require('./admin/routes/userAdminRoutes'); // SSR Admin
-const userApiRoutes = require('./routes/users'); // API Routes (JSON)
-const notificationsRoutes = require('./admin/routes/notifications');
-const wishlistRoutes = require('./routes/wishlistRoutes');
+function isLoggedIn(req, res, next) {
+  if (req.session && req.session.user) return next();
+  return res.redirect('/login');
+}
 
-// ===== API Routes =====
+// ===== Import Route Aggregators =====
+const routes = require('./routes');
+const adminRouters = require('./admin/routes');
+
+// ===== API ROUTES (RESTful) =====
 app.use('/api/auth', routes.authRoutes);
-app.use('/api/users', userApiRoutes); // ✅ JSON only
 app.use('/api/categories', routes.categoryRoutes);
 app.use('/api/subcategories', routes.subcategoryRoutes);
 app.use('/api/products', routes.productRoutes);
@@ -137,69 +131,115 @@ app.use('/api/favourites', routes.favouriteRoutes);
 app.use('/api/orders', routes.orderRoutes);
 app.use('/api/protected', routes.protectedRoutes);
 app.use('/api/cart/items', routes.cartItemRoutes);
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/notifications', notificationsRoutes);
+app.use('/api/users', routes.userRoutes);
+app.use('/api/wishlist', routes.wishlistRoutes);
+app.use('/api/users/me/addresses', routes.addressRoutes);
+app.use('/api/payment', routes.paymentRoutes);
+app.use('/api', routes.contactRoutes);
 
-try {
-  app.use('/api/payment', require('./routes/paymentRoutes'));
-} catch (e) {
-  console.warn('Payment routes not found or not used.');
-}
+// ===== ADMIN PANEL ROUTES =====
+app.use('/admin', adminRouters.adminAuthRoutes);
+app.use('/admin', adminRouters.adminRoutes);
+app.use('/admin', adminRouters.adminDashboardRoutes);
+app.use('/products', isAdmin, adminRouters.productAdminRoutes);
+app.use('/orders', isAdmin, adminRouters.ordersRoutes);
+app.use('/categories', isAdmin, adminRouters.categoriesRoutes);
+app.use('/subcategories', isAdmin, adminRouters.subcategoriesRoutes);
+app.use('/users', isAdmin, adminRouters.userAdminRoutes);
 
-// ===== Admin Auth Routes =====
-app.use('/admin', adminAuthRoutes);
+// ===== Fuzzy Search (GET /search) =====
+app.use('/', routes.searchRoutes);
 
-// ===== Admin Dashboard Web (Vue + HBS SSR App) =====
-app.use('/admin', adminDashboardRoutes);
-
-// ===== Admin Panel Views (HBS + Vue Hydrated Pages) =====
-app.use('/products', isAdmin, productWebRoutes);
-app.use('/orders', isAdmin, orderWebRoutes);
-app.use('/categories', isAdmin, categoryWebRoutes);
-app.use('/subcategories', isAdmin, subcategoryWebRoutes);
-app.use('/users', isAdmin, userWebRoutes); // ✅ SSR admin user page
-
-// ===== /admin (login redirecting) =====
+// ===== /admin auto redirect =====
 app.get('/admin', (req, res) => {
   return req.session?.user?.role === 'admin'
     ? res.redirect('/admin/dashboard')
     : res.redirect('/admin/login');
 });
 
-// ===== Search =====
-app.get('/search', async (req, res) => {
-  const q = req.query.q?.trim();
-  if (!q) {
-    return res.render('searchResults', { title: 'Search', query: '', results: { users: [], products: [] } });
-  }
+// ========== SSR USER PROFILE/SETTINGS ==========
 
+app.get('/profile', isLoggedIn, async (req, res) => {
   try {
-    const [users, products] = await Promise.all([
-      db.User.findAll({
-        where: {
-          [Op.or]: [
-            { name: { [Op.like]: `%${q}%` } },
-            { email: { [Op.like]: `%${q}%` } }
-          ]
-        },
-        raw: true
-      }),
-      db.Product.findAll({
-        where: {
-          name: { [Op.like]: `%${q}%` }
-        },
-        raw: true
-      })
-    ]);
-
-    res.render('searchResults', {
-      title: 'Search Results',
-      query: q,
-      results: { users, products }
-    });
+    const userInstance = await db.User.findByPk(req.session.user.id);
+    if (!userInstance) {
+      return res.status(404).render('404', { layout: 'main', title: 'User Not Found' });
+    }
+    const user = userInstance.get({ plain: true });
+    res.render('profile', { layout: 'main', title: 'Profile', user });
   } catch (err) {
-    console.error('Search error:', err);
-    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.session.user });
+    console.error('Error rendering profile:', err);
+    res.status(500).render('500', { layout: 'main', title: 'Server Error' });
+  }
+});
+
+app.get('/settings', isLoggedIn, async (req, res) => {
+  try {
+    const userInstance = await db.User.findByPk(req.session.user.id);
+    if (!userInstance) {
+      return res.status(404).render('404', { layout: 'main', title: 'User Not Found' });
+    }
+    const user = userInstance.get({ plain: true });
+    res.render('settings', { layout: 'main', title: 'Settings', user });
+  } catch (err) {
+    console.error('Error rendering settings:', err);
+    res.status(500).render('500', { layout: 'main', title: 'Server Error' });
+  }
+});
+
+// SSR PROFILE UPDATE (uses /uploads/users)
+const uploadSSR = getUpload('users');
+
+app.post('/profile', isLoggedIn, uploadSSR.single('avatar'), async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    const updateFields = { name, email };
+    let avatarUrl;
+    if (req.file) {
+      const filepath = req.file.path;
+      const tmpOutput = filepath + '-tmp';
+      try {
+        await sharp(filepath)
+          .resize({ width: 600, height: 600, fit: 'inside', withoutEnlargement: true })
+          .toFormat('jpeg')
+          .jpeg({ quality: 80 })
+          .toFile(tmpOutput);
+        fs.unlinkSync(filepath);
+        fs.renameSync(tmpOutput, filepath);
+        avatarUrl = `/uploads/users/${req.file.filename}`;
+        updateFields.avatar = avatarUrl;
+        req.session.user.avatar = avatarUrl;
+      } catch (sharpErr) {
+        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        console.error('[Sharp processing error]', sharpErr);
+        return res.status(500).json({ success: false, error: 'Failed to process image' });
+      }
+    }
+    await db.User.update(updateFields, { where: { id: req.session.user.id } });
+    req.session.user.name = name;
+    req.session.user.email = email;
+    return res.json({ success: true, avatar: avatarUrl });
+  } catch (err) {
+    console.error('[Profile update error]', err);
+    return res.status(500).json({ success: false, error: err.message || 'Server error' });
+  }
+});
+
+app.post('/settings', isLoggedIn, async (req, res) => {
+  try {
+    const { name, email } = req.body;
+    await db.User.update({ name, email }, { where: { id: req.session.user.id }});
+    const userInstance = await db.User.findByPk(req.session.user.id);
+    const user = userInstance ? userInstance.get({ plain: true }) : {};
+    res.render('settings', { layout: 'main', title: 'Settings', user, success: 'Settings updated!' });
+  } catch (err) {
+    console.error('Error updating settings:', err);
+    let user = {};
+    try {
+      const userInstance = await db.User.findByPk(req.session.user.id);
+      user = userInstance ? userInstance.get({ plain: true }) : {};
+    } catch {}
+    res.render('settings', { layout: 'main', title: 'Settings', user, error: 'Failed to update settings.' });
   }
 });
 
@@ -209,13 +249,13 @@ app.use((req, res, next) => {
     return res.status(404).render('404', {
       layout: 'main',
       title: 'Not Found',
-      user: req.session.user
+      user: req.session.user,
     });
   }
   return res.status(404).json({ error: 'API endpoint not found' });
 });
 
-// ===== 500 Error Handler =====
+// ===== 500 Handler =====
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   if (req.accepts('html')) {
@@ -228,9 +268,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ===== Database Sync & Start =====
+// ===== DB Sync & Start =====
 const sequelize = db.sequelize;
-
 sequelize.sync()
   .then(() => {
     const PORT = process.env.PORT || 3000;

@@ -1,0 +1,262 @@
+{{!--
+  User Profile Page (Vue + SSR)
+  Features:
+    - Edit profile info (name, email, avatar)
+    - Quick actions (products, dashboard, subcategories, categories, orders, logout)
+    - Avatar upload + preview, auto-refresh after change
+    - Buttons always visible (high contrast) in all themes
+--}}
+
+<div id="profile-app" v-cloak>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-lg-10">
+
+        <!-- Profile Card -->
+        <div class="card shadow rounded-3 border-0 mb-5 position-relative"
+             style="min-height:200px; background:linear-gradient(90deg,#6366f1 0,#60a5fa 100%);">
+          <button class="btn position-absolute top-0 end-0 m-3 btn-light btn-sm shadow"
+                  title="Edit Profile" @click="openEditProfile">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <div class="d-flex flex-column flex-md-row align-items-center" style="height:100%;">
+            <div class="text-center p-4 flex-shrink-0">
+              <div class="mb-2 position-relative">
+                <label style="cursor:pointer;">
+                  <img
+                    :src="editAvatarPreview || user.avatar || defaultAvatar"
+                    alt="Avatar"
+                    class="rounded-circle shadow-lg"
+                    style="width:120px; height:120px; object-fit:cover; border:4px solid #fff;"
+                  >
+                  <!-- Only let user pick new avatar in modal (edit mode) -->
+                  <input v-if="editMode" type="file" accept="image/*" class="d-none" @change="onAvatarChange">
+                  <span v-if="editMode" class="position-absolute bottom-0 end-0 bg-white rounded-circle p-1 border">
+                    <i class="bi bi-camera text-primary"></i>
+                  </span>
+                </label>
+              </div>
+              <h2 class="h4 mb-1" v-text="user.name"></h2>
+              <div class="text-muted mb-2">
+                <i class="bi bi-envelope"></i> ${ user.email }
+              </div>
+              <span class="badge rounded-pill bg-light text-dark text-capitalize me-2">${ user.role }</span>
+            </div>
+            <div class="flex-grow-1 px-4 text-white">
+              <div class="row mb-3">
+                <div class="col-12 col-md-auto mb-2 mb-md-0">
+                  <span><i class="bi bi-calendar2-week"></i>
+                    Joined: {{formatDate user.createdAt 'date'}}
+                  </span>
+                </div>
+                <div class="col">
+                  <span v-if="user.lastLogin"><i class="bi bi-clock-history"></i>
+                    Last Login: ${ formatDate(user.lastLogin) }
+                  </span>
+                </div>
+              </div>
+              <div>
+                <a href="#settings" class="btn btn-light btn-sm me-2" @click.prevent="openEditProfile">
+                  <i class="bi bi-gear"></i> Edit Profile
+                </a>
+                <a href="/orders" class="btn btn-primary btn-sm">
+                  <i class="bi bi-cart-check"></i> Orders
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions (solid/filled, always visible) -->
+        <div class="card mb-4 shadow rounded-3 border-0">
+          <div class="card-body">
+            <h5 class="mb-3">Quick Actions</h5>
+            <div class="row g-3">
+              <div class="col-6 col-lg-4">
+                <a href="/products" class="btn btn-success w-100 quick-action-btn">
+                  <i class="bi bi-box-seam"></i> Products
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="/admin/dashboard" class="btn btn-warning w-100 quick-action-btn">
+                  <i class="bi bi-speedometer2"></i> Dashboard
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="/subcategories" class="btn btn-secondary w-100 quick-action-btn">
+                  <i class="bi bi-files"></i> Subcategories
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="/categories" class="btn btn-dark w-100 quick-action-btn">
+                  <i class="bi bi-diagram-3"></i> Categories
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="#settings" class="btn btn-primary w-100 quick-action-btn" @click.prevent="openEditProfile">
+                  <i class="bi bi-person-gear me-1"></i> Edit Profile
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="/orders" class="btn btn-info w-100 quick-action-btn">
+                  <i class="bi bi-bag-check"></i> Orders
+                </a>
+              </div>
+              <div class="col-6 col-lg-4">
+                <a href="/logout" class="btn btn-danger w-100 quick-action-btn" @click.prevent="logout">
+                  <i class="bi bi-box-arrow-right"></i> Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true" ref="modal">
+          <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow">
+              <div class="modal-header">
+                <h5 class="modal-title">Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                  @click="closeEditProfile"></button>
+              </div>
+              <form @submit.prevent="saveProfileChanges">
+                <div class="modal-body">
+                  <div class="mb-3 text-center">
+                    <img
+                      :src="editAvatarPreview || user.avatar || defaultAvatar"
+                      alt="Edit Avatar"
+                      class="rounded-circle shadow-lg" width="90" height="90"
+                      style="object-fit:cover; border:3px solid #f8fafc;">
+                    <input type="file" accept="image/*" class="form-control mt-2" @change="onAvatarChange">
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" v-model="editName" maxlength="64" required>
+                  </div>
+                  <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" v-model="editEmail" maxlength="96" required>
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-light" data-bs-dismiss="modal"
+                    @click="closeEditProfile">Cancel</button>
+                  <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-save"></i> Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Vue 3, Bootstrap 5 JS, & init script -->
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.27/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const DEFAULT_AVATAR = "https://ui-avatars.com/api/?name=User&background=0d6efd&color=fff&size=140";
+const app = Vue.createApp({
+  delimiters: ['${', '}'],
+  data() {
+    return {
+      user: {{{json user}}}, // Provided from backend
+      defaultAvatar: DEFAULT_AVATAR,
+      editMode: false,
+      editName: "",
+      editEmail: "",
+      editAvatar: null,
+      editAvatarPreview: null
+    }
+  },
+  mounted() {
+    this.editName = this.user.name || "";
+    this.editEmail = this.user.email || "";
+  },
+  methods: {
+    formatDate(dt) {
+      if (!dt) return "";
+      const d = new Date(dt);
+      return d.toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: '2-digit' });
+    },
+    openEditProfile() {
+      this.editMode = true;
+      this.editName = this.user.name || "";
+      this.editEmail = this.user.email || "";
+      this.editAvatar = null;
+      this.editAvatarPreview = null;
+      const modal = new bootstrap.Modal(this.$refs.modal);
+      modal.show();
+    },
+    closeEditProfile() {
+      this.editMode = false;
+      this.editAvatar = null;
+      this.editAvatarPreview = null;
+      const modal = bootstrap.Modal.getInstance(this.$refs.modal);
+      modal.hide();
+    },
+    onAvatarChange(e) {
+      const file = e.target.files[0];
+      if (file) {
+        this.editAvatar = file;
+        const reader = new FileReader();
+        reader.onload = (ev) => { this.editAvatarPreview = ev.target.result; }
+        reader.readAsDataURL(file);
+      }
+    },
+    saveProfileChanges() {
+      const formData = new FormData();
+      formData.append('name', this.editName);
+      formData.append('email', this.editEmail);
+      if (this.editAvatar) formData.append('avatar', this.editAvatar);
+
+      fetch('/profile', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          this.user.name = this.editName;
+          this.user.email = this.editEmail;
+          if (data.avatar) {
+            // Add timestamp as cache-buster, so avatar always refreshes after upload
+            this.user.avatar = data.avatar + '?t=' + Date.now();
+          }
+          this.$refs.modal && bootstrap.Modal.getInstance(this.$refs.modal).hide();
+          window.location.reload();
+        } else {
+          alert(data.error || 'Update failed');
+        }
+      })
+      .catch(() => alert('Network error or invalid response.'));
+    },
+    logout() {
+      fetch('/logout', { method: 'GET', credentials: 'include' })
+        .then(() => window.location.href = '/login');
+    }
+  }
+});
+app.mount("#profile-app");
+</script>
+<style>
+[v-cloak] { display: none; }
+.quick-action-btn, .btn {
+  /* Ensure white text and visible icons on any background. */
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.03);
+  font-weight: 500;
+}
+.quick-action-btn i { color: #fff !important; }
+.btn-warning, .btn-warning:hover, .btn-warning:focus { color: #000 !important; }
+.btn-info, .btn-info:hover, .btn-info:focus { color: #fff !important; }
+.btn-light, .btn-light:hover, .btn-light:focus { color: #222 !important; }
+.btn-dark, .btn-dark:hover, .btn-dark:focus { color: #fff !important; }
+</style>

@@ -1,182 +1,215 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no">
-    <meta name="ecommerce" content="CoreUI Admin Panel">
-    <meta name="tyagi" content="Errica">
-    <title>{{title}}</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,shrink-to-fit=no">
+  <meta name="ecommerce" content="CoreUI Admin Panel">
+  <meta name="tyagi" content="Errica">
+  <title>{{title}}</title>
 
-    <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    {{!-- <link rel="manifest" href="/manifest.json"> --}}
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-    <meta name="theme-color" content="#ffffff">
+  <!-- Favicons -->
+  <link rel="apple-touch-icon" sizes="57x57" href="/apple-icon-57x57.png">
+  <link rel="apple-touch-icon" sizes="60x60" href="/apple-icon-60x60.png">
+  <link rel="apple-touch-icon" sizes="72x72" href="/apple-icon-72x72.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/apple-icon-76x76.png">
+  <link rel="apple-touch-icon" sizes="114x114" href="/apple-icon-114x114.png">
+  <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
+  <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <meta name="msapplication-TileColor" content="#ffffff">
+  <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+  <meta name="theme-color" content="#ffffff">
 
-    <!-- CoreUI CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- CoreUI Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/icons@3.0.1/css/all.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <!-- CoreUI CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/css/coreui.min.css">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <!-- CoreUI Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@coreui/icons@3.0.1/css/all.min.css">
 
-    {{!-- Dynamically load Vite CSS from manifest --}}
-    {{#if viteManifest}}
-      {{#if isAdminLogin}}
-        {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
-          {{#if bundle.css}}
-            {{#each bundle.css}}
-              <link rel="stylesheet" href="/dist/{{this}}">
-            {{/each}}
-          {{/if}}
-        {{/with}}
-      {{/if}}
-      {{#if isDashboard}}
-        {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
-          {{#if bundle.css}}
-            {{#each bundle.css}}
-              <link rel="stylesheet" href="/dist/{{this}}">
-            {{/each}}
-          {{/if}}
-        {{/with}}
-      {{/if}}
+  {{#if viteManifest}}
+    {{#if isAdminLogin}}
+      {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
+        {{#if bundle.css}}
+          {{#each bundle.css}}
+            <link rel="stylesheet" href="/dist/{{this}}">
+          {{/each}}
+        {{/if}}
+      {{/with}}
     {{/if}}
-
-    {{{styles}}}
-
-    <!-- Theme and Table Fixes (unchanged) -->
-    <style>
-      body.light-theme {
-        --cui-body-bg: #f8fafc;
-        --cui-body-color: #222;
-        --cui-muted-color: #6c757d;
-        --cui-secondary-color: #495057;
-      }
-      body.dark-theme {
-        --cui-body-bg: #18181b;
-        --cui-body-color: #f1f5f9;
-        --cui-muted-color: #bdbdbd;
-        --cui-secondary-color: #d1d5db;
-      }
-      body {
-        background: var(--cui-body-bg) !important;
-        color: var(--cui-body-color) !important;
-      }
-      .header, .card, .dropdown-menu, .sidebar-sections-menu {
-        background: var(--cui-body-bg, #fff) !important;
-        color: var(--cui-body-color, #222) !important;
-      }
-      .bg-light {
-        background-color: var(--cui-body-bg) !important;
-        color: var(--cui-body-color) !important;
-      }
-      .bg-dark {
-        background-color: #23232b !important;
-        color: #f1f5f9 !important;
-      }
-      .text-body {
-        color: var(--cui-body-color, #222) !important;
-      }
-      .text-white {
-        color: #fff !important;
-      }
-      .text-white-50 {
-        color: #bdbdbd !important;
-      }
-      .text-muted, small, .small {
-        color: var(--cui-muted-color, #6c757d) !important;
-      }
-      .text-secondary {
-        color: var(--cui-secondary-color, #495057) !important;
-      }
-      body.light-theme .table,
-      body.light-theme .table th,
-      body.light-theme .table td {
-        background-color: #fff !important;
-        color: #222 !important;
-      }
-      body.dark-theme .table,
-      body.dark-theme .table th,
-      body.dark-theme .table td {
-        background-color: #23232b !important;
-        color: #f1f5f9 !important;
-      }
-      body.light-theme .bg-light {
-        background-color: #f1f5f9 !important;
-        color: #222 !important;
-      }
-      body.dark-theme .bg-light {
-        background-color: #23232b !important;
-        color: #f1f5f9 !important;
-      }
-      body.light-theme .table-striped > tbody > tr:nth-of-type(odd) {
-        background-color: #f8fafc !important;
-      }
-      body.dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
-        background-color: #23232b !important;
-      }
-      body.light-theme .table-hover > tbody > tr:hover {
-        background-color: #e7eaee !important;
-      }
-      body.dark-theme .table-hover > tbody > tr:hover {
-        background-color: #1a1a1f !important;
-      }
-    </style>
-  </head>
-  <body>
-    <noscript>
-      <strong>We're sorry but this app doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-
-    {{#unless isAdminLogin}}
-      {{> header}}
-    {{/unless}}
-
-    <main>
-      {{{body}}}
-    </main>
-
-    {{#unless isAdminLogin}}
-      {{> footer}}
-    {{/unless}}
-
-    <!-- CoreUI JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>
-
-    {{!-- Load Chart.js only for dashboard --}}
     {{#if isDashboard}}
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
+        {{#if bundle.css}}
+          {{#each bundle.css}}
+            <link rel="stylesheet" href="/dist/{{this}}">
+          {{/each}}
+        {{/if}}
+      {{/with}}
     {{/if}}
+  {{/if}}
 
-    {{!-- Dynamically load Vite JS from manifest --}}
-    {{#if viteManifest}}
-      {{#if isAdminLogin}}
-        {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
-          <script type="module" src="/dist/{{bundle.file}}"></script>
-        {{/with}}
-      {{/if}}
-      {{#if isDashboard}}
-        {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
-          <script type="module" src="/dist/{{bundle.file}}"></script>
-        {{/with}}
-      {{/if}}
+  {{{styles}}}
+
+  <style>
+    :root {
+      --cui-header-bg: #fff;
+    }
+    body.light-theme {
+      --cui-body-bg: #f8fafc;
+      --cui-body-color: #222;
+      --cui-muted-color: #6c757d;
+      --cui-secondary-color: #495057;
+      --cui-header-bg: #fff;
+    }
+    body.dark-theme {
+      --cui-body-bg: #18181b;
+      --cui-body-color: #f1f5f9;
+      --cui-muted-color: #bdbdbd;
+      --cui-secondary-color: #d1d5db;
+      --cui-header-bg: #23232b;
+    }
+    body {
+      background: var(--cui-body-bg) !important;
+      color: var(--cui-body-color) !important;
+    }
+    .header, .card, .dropdown-menu, .sidebar-sections-menu {
+      background: var(--cui-header-bg, #fff) !important;
+      color: var(--cui-body-color, #222) !important;
+    }
+    .bg-light {
+      background-color: var(--cui-body-bg) !important;
+      color: var(--cui-body-color) !important;
+    }
+    .bg-dark {
+      background-color: #23232b !important;
+      color: #f1f5f9 !important;
+    }
+    .text-body {
+      color: var(--cui-body-color, #222) !important;
+    }
+    .text-white {
+      color: #fff !important;
+    }
+    .text-white-50 {
+      color: #bdbdbd !important;
+    }
+    .text-muted, small, .small {
+      color: var(--cui-muted-color, #6c757d) !important;
+    }
+    .text-secondary {
+      color: var(--cui-secondary-color, #495057) !important;
+    }
+    body.light-theme .table,
+    body.light-theme .table th,
+    body.light-theme .table td {
+      background-color: #fff !important;
+      color: #222 !important;
+    }
+    body.dark-theme .table,
+    body.dark-theme .table th,
+    body.dark-theme .table td {
+      background-color: #23232b !important;
+      color: #f1f5f9 !important;
+    }
+    body.light-theme .bg-light {
+      background-color: #f1f5f9 !important;
+      color: #222 !important;
+    }
+    body.dark-theme .bg-light {
+      background-color: #23232b !important;
+      color: #f1f5f9 !important;
+    }
+    body.light-theme .table-striped > tbody > tr:nth-of-type(odd) {
+      background-color: #f8fafc !important;
+    }
+    body.dark-theme .table-striped > tbody > tr:nth-of-type(odd) {
+      background-color: #23232b !important;
+    }
+    body.light-theme .table-hover > tbody > tr:hover {
+      background-color: #e7eaee !important;
+    }
+    body.dark-theme .table-hover > tbody > tr:hover {
+      background-color: #1a1a1f !important;
+    }
+
+    /* === GLOBAL Button, Icon, Avatar color THEME FIX (for all themes, all pages) === */
+    .theme-contrast-btn {
+      background: #fff !important;
+      color: #222 !important;
+      border: none !important;
+      transition: background 0.15s, color 0.15s;
+    }
+    body.dark-theme .theme-contrast-btn {
+      background: #23232b !important;
+      color: #e0eaff !important;
+      border: none !important;
+    }
+
+    .header .icon, .sidebar .icon, .theme-contrast-btn .icon {
+      color: #2563eb !important;
+    }
+    body.dark-theme .header .icon,
+    body.dark-theme .sidebar .icon,
+    body.dark-theme .theme-contrast-btn .icon {
+      color: #94a3b8 !important;
+    }
+
+    .theme-avatar, .avatar.avatar-md {
+      background: #2563eb !important;
+      color: #fff !important;
+    }
+    body.dark-theme .theme-avatar, body.dark-theme .avatar.avatar-md {
+      background: #2753ad !important;
+      color: #fff !important;
+    }
+    /* END THEME FIX */
+  </style>
+</head>
+<body>
+  <noscript>
+    <strong>We're sorry but this app doesn't work properly without JavaScript enabled.</strong>
+  </noscript>
+
+  {{!-- HEADER: Show for all except login --}}
+  {{#unless isAdminLogin}}
+    {{> header}}
+  {{/unless}}
+
+  <main>
+    {{{body}}}
+  </main>
+
+  {{!-- FOOTER: Show for all except login --}}
+  {{#unless isAdminLogin}}
+    {{> footer}}
+  {{/unless}}
+
+  <!-- CoreUI JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@coreui/coreui@5.4.1/dist/js/coreui.bundle.min.js"></script>
+
+  {{#if isDashboard}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  {{/if}}
+
+  {{#if viteManifest}}
+    {{#if isAdminLogin}}
+      {{#with (lookup viteManifest "src/vue-adminLogin.js") as |bundle|}}
+        <script type="module" src="/dist/{{bundle.file}}"></script>
+      {{/with}}
     {{/if}}
+    {{#if isDashboard}}
+      {{#with (lookup viteManifest "src/vue-dashboard.js") as |bundle|}}
+        <script type="module" src="/dist/{{bundle.file}}"></script>
+      {{/with}}
+    {{/if}}
+  {{/if}}
 
-    {{{scripts}}}
-  </body>
+  {{{scripts}}}
+</body>
 </html>

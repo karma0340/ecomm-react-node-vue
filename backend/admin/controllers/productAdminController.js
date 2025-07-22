@@ -5,7 +5,7 @@ const db = require('../../models');
 const distDir = path.join(__dirname, '..', '..', 'dist');
 const manifestPath = path.join(distDir, 'manifest.json');
 
-// Helper for SSR: resolves the path to your Vue build bundle
+// ------- SSR helpers -------
 function getVueScript() {
   if (fs.existsSync(manifestPath)) {
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
@@ -23,40 +23,13 @@ function getVueScript() {
   return '/admin/dist/vue-products.js';
 }
 
-// Helper to get categories and subcategories for forms
 async function getCategoriesAndSubcategories() {
   const categories = await db.Category.findAll();
   const subcategories = await db.SubCategory.findAll();
   return { categories, subcategories };
 }
 
-// ===================== SSR product management page ======================
-exports.listProducts = async (req, res) => {
-  try {
-    const products = await db.Product.findAll({
-      include: [
-        { model: db.Category, as: 'category', attributes: ['id', 'name'] },
-        { model: db.SubCategory, as: 'subCategory', attributes: ['id', 'name'] }
-      ]
-    });
-    const { categories, subcategories } = await getCategoriesAndSubcategories();
-    const vueScript = getVueScript();
-
-    res.render('products', {
-      layout: 'main',
-      title: 'Product Management',
-      user: req.user,
-      products: products || [],
-      categories: categories || [],
-      subcategories: subcategories || [],
-      vueScript
-    });
-  } catch (err) {
-    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
-  }
-};
-
-// --- Utility: safe field normalization for product CRUD ---
+// ------- Field normalization -------
 function normalizeProductFields(obj) {
   const safeValue = val => (typeof val === 'string' && val.trim() === '') ? null : val;
   return {
@@ -70,9 +43,71 @@ function normalizeProductFields(obj) {
   };
 }
 
-// ===================== API for Vue admin panel ===========================
+// =================== SSR Admin Product List (optionally add filtering by req.query.q) ===================
+exports.listProducts = async (req, res) => {
+  try {
+    // Optional search: uncomment to allow filter by ?q=...
+    // const q = req.query.q ? req.query.q.trim() : '';
+    // let where = {};
+    // if (q) where.name = { [db.Sequelize.Op.iLike]: `%${q}%` };
 
-// GET /admin/products/api  -- list all products with associations (no pagination, you can add if wanted)
+    const products = await db.Product.findAll({
+      // where, // <-- add for filtering/search
+      include: [
+        { model: db.Category, as: 'category', attributes: ['id', 'name'] },
+        { model: db.SubCategory, as: 'subCategory', attributes: ['id', 'name'] }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+    const { categories, subcategories } = await getCategoriesAndSubcategories();
+    const vueScript = getVueScript();
+
+    res.render('products', {
+      layout: 'main',
+      title: 'Product Management',
+      user: req.user,
+      products: products || [],
+      categories: categories || [],
+      subcategories: subcategories || [],
+      vueScript
+      // , query: q      // include if you support filtering
+    });
+  } catch (err) {
+    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
+  }
+};
+
+// =================== SSR Admin Product Details (CRUD page - NOT API) ===================
+exports.getProductDetails = async (req, res) => {
+  try {
+    const product = await db.Product.findByPk(req.params.id, {
+      include: [
+        { model: db.Category, as: 'category', attributes: ['id', 'name'] },
+        { model: db.SubCategory, as: 'subCategory', attributes: ['id', 'name'] }
+      ]
+    });
+    if (!product) return res.status(404).render('404', { layout: 'main', message: 'Product not found', user: req.user });
+
+    const { categories, subcategories } = await getCategoriesAndSubcategories();
+    const vueScript = getVueScript();
+
+    res.render('productEdit', {
+      layout: 'main',
+      title: `Edit Product: ${product.name}`,
+      user: req.user,
+      product,
+      categories: categories || [],
+      subcategories: subcategories || [],
+      vueScript
+    });
+  } catch (err) {
+    res.status(500).render('500', { layout: 'main', title: 'Server Error', user: req.user });
+  }
+};
+
+// =================== Admin API Endpoints for CRUD ===================
+
+// List all products (JSON)
 exports.apiListProducts = async (req, res) => {
   try {
     const products = await db.Product.findAll({
@@ -88,7 +123,8 @@ exports.apiListProducts = async (req, res) => {
   }
 };
 
-// POST /admin/products/api
+// Add new product (JSON)
+// expects req.body + maybe req.file.filename for imageUrl
 exports.apiAddProduct = async (req, res) => {
   try {
     let payload = normalizeProductFields(req.body);
@@ -114,7 +150,7 @@ exports.apiAddProduct = async (req, res) => {
   }
 };
 
-// PUT /admin/products/api/:id
+// Edit product (JSON by id)
 exports.apiEditProduct = async (req, res) => {
   try {
     const id = req.params.id;
@@ -129,7 +165,6 @@ exports.apiEditProduct = async (req, res) => {
     const product = await db.Product.findByPk(id);
     if (!product) return res.status(404).json({ error: 'Product not found.' });
 
-    // Update only the allowed fields, including stock!
     await product.update(payload);
 
     const productFull = await db.Product.findByPk(product.id, {
@@ -144,7 +179,7 @@ exports.apiEditProduct = async (req, res) => {
   }
 };
 
-// DELETE /admin/products/api/:id
+// Delete product (JSON)
 exports.apiDeleteProduct = async (req, res) => {
   try {
     const id = req.params.id;

@@ -1,0 +1,117 @@
+views/wishlist.hbs
+{{!--
+  Wishlist Page (SSR, Bootstrap 5)
+  Variables expected:
+    - user: current logged-in user
+    - wishlist: array, each item has 'product': { id, name, price, imageUrl, ... }
+--}}
+
+{{! The main layout is assumed to be used via your Express config }}
+{{!-- 
+<div class="container py-4">
+  <h1 class="mb-4"><i class="bi bi-heart-fill text-danger"></i> Your Wishlist</h1>
+
+  {{!-- Show user info --}}
+  <div class="mb-4 p-3 bg-light rounded shadow-sm d-flex align-items-center">
+    <img src="{{user.avatar}}" alt="avatar"
+         class="rounded-circle me-3" width="48" height="48" style="object-fit:cover; border:2px solid #eee;">
+    <div>
+      <div><strong>{{user.name}}</strong> <span class="text-muted">({{user.email}})</span></div>
+      <span class="badge bg-info text-dark text-capitalize">{{user.role}}</span>
+    </div>
+  </div>
+
+  {{!-- Wishlist Table --}}
+  {{#if wishlist.length}}
+    <div class="table-responsive shadow rounded-3">
+      <table class="table align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Product</th>
+            <th>Image</th>
+            <th>Price</th>
+            <th>Added On</th>
+            <th>Remove</th>
+          </tr>
+        </thead>
+        <tbody>
+        {{#each wishlist}}
+          <tr>
+            <td>
+              <a href="/products/{{product.id}}" class="text-decoration-none">
+                {{product.name}}
+              </a>
+            </td>
+            <td>
+              {{#if product.imageUrl}}
+                <img src="{{product.imageUrl}}" alt="{{product.name}}" width="56" height="56"
+                  style="object-fit:cover; border-radius:8px; border:1px solid #eee;">
+              {{else}}
+                <span class="text-muted"><i class="bi bi-image-alt"></i> No image</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if product.price}}
+                ₹{{product.price}}
+              {{else}}
+                <span class="text-muted">N/A</span>
+              {{/if}}
+            </td>
+            <td>
+              {{#if this.createdAt}}
+                {{formatDate this.createdAt 'date'}}
+              {{else}}
+                <span class="text-muted">-</span>
+              {{/if}}
+            </td>
+            <td>
+              <form method="POST"
+                    action="/api/wishlist/items/{{product.id}}"
+                    onsubmit="return confirm('Remove this item from your wishlist?');">
+                <button type="submit" class="btn btn-sm btn-outline-danger"
+                  onclick="event.preventDefault(); removeFromWishlist({{product.id}}, this);">
+                  <i class="bi bi-trash"></i> Remove
+                </button>
+              </form>
+            </td>
+          </tr>
+        {{/each}}
+        </tbody>
+      </table>
+    </div>
+  {{else}}
+    <div class="alert alert-info mt-4">
+      <i class="bi bi-emoji-frown"></i> Your wishlist is empty.
+      <a href="/products" class="btn btn-sm btn-outline-primary ms-3">
+        <i class="bi bi-shop"></i> Browse Products
+      </a>
+    </div>
+  {{/if}}
+
+</div>
+
+<script>
+  // AJAX removal to enhance UX (if CSRF is not enforced, else just use normal POST)
+  function removeFromWishlist(productId, btn) {
+    if(!confirm("Remove this item from your wishlist?")) return false;
+    fetch(`/api/wishlist/items/${productId}`, {
+      method: 'DELETE',
+      credentials: 'include'
+    }).then(res => res.json())
+      .then(json => {
+        if(json.message) {
+          btn.closest("tr").remove();
+          if(document.querySelectorAll('tbody tr').length === 0) {
+            window.location.reload();
+          }
+        } else {
+          alert(json.error || 'Failed to remove.');
+        }
+      }).catch(() => alert('Network error.'));
+    return false; // Prevent default form
+  }
+</script>
+
+<style>
+  .table > tbody > tr > td { vertical-align: middle; }
+</style> --}}

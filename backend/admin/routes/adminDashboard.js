@@ -28,6 +28,8 @@ router.get('/dashboard', isAdmin, async (req, res) => {
     layout: 'main',
     title: 'Admin Dashboard',
     isDashboard: true,
+    isVueHeader: true, // <<== Key: tells layout to use Vue header (and load vue-header.js/CSS)
+    user: req.user || { name: 'Admin' },
     stats,
     recentUsers
   });

@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       shippingAddress: { type: DataTypes.TEXT, allowNull: false },
       paymentMethod: { type: DataTypes.STRING, allowNull: false, defaultValue: 'cod' },
-      phoneNumber: { type: DataTypes.STRING, allowNull: false },
+      phone: { type: DataTypes.STRING, allowNull: false },
       email: { type: DataTypes.STRING, allowNull: false, validate: { isEmail: true } },
       paymentIntentId: { type: DataTypes.STRING, allowNull: true }
     },

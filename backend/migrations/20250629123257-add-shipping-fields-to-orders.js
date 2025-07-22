@@ -5,7 +5,7 @@ module.exports = {
       allowNull: false,
       defaultValue: '',
     });
-    await queryInterface.addColumn('Orders', 'phoneNumber', {
+    await queryInterface.addColumn('Orders', 'phone', {
       type: Sequelize.STRING,
       allowNull: false,
       defaultValue: '',
@@ -23,7 +23,7 @@ module.exports = {
   },
   async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('Orders', 'shippingAddress');
-    await queryInterface.removeColumn('Orders', 'phoneNumber');
+    await queryInterface.removeColumn('Orders', 'phone');
     await queryInterface.removeColumn('Orders', 'paymentMethod');
     await queryInterface.removeColumn('Orders', 'email');
   }

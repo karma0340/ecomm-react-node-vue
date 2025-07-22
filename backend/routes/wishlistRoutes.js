@@ -1,10 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../models');      
-const Wishlist = db.Wishlist;          
+const db = require('../models');
+const Wishlist = db.Wishlist;
 const authenticate = require('../middleware/authJwt');
 
-// POST /api/wishlist/items - Add product to wishlist
+// ===============================
+// POST /api/wishlist/items
+// Add product to wishlist (for logged-in user)
+// ===============================
 router.post('/items', authenticate, async (req, res) => {
   try {
     const { productId } = req.body;
@@ -23,7 +26,10 @@ router.post('/items', authenticate, async (req, res) => {
   }
 });
 
-// GET /api/wishlist/items - Get all wishlist products for the logged-in user
+// ===============================
+// GET /api/wishlist/items
+// Get all wishlist products for the logged-in user
+// ===============================
 router.get('/items', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -45,7 +51,11 @@ router.get('/items', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch wishlist.' });
   }
 });
-// DELETE /api/wishlist/items/:productId - Remove product from wishlist
+
+// ===============================
+// DELETE /api/wishlist/items/:productId
+// Remove product from wishlist (for logged-in user)
+// ===============================
 router.delete('/items/:productId', authenticate, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -63,4 +73,5 @@ router.delete('/items/:productId', authenticate, async (req, res) => {
     res.status(500).json({ error: 'Failed to remove from wishlist.' });
   }
 });
+
 module.exports = router;

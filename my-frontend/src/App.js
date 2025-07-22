@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Routes, Route } from 'react-router-dom'; // BrowserRouter should be in index.js
+import { Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import HeroSection from './components/HeroSection';
 import Category from './components/Category';
@@ -12,11 +12,16 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import ContactPage from './components/ContactPage';
 import AboutPage from './components/AboutPage';
+import ProfilePage from './components/ProfilePage';
+import Settings from './components/Settings'; // ⚡ make sure this file exists!
+import { useGlobalLoader } from './components/GlobalLoaderContext';
+
 import axios from 'axios';
 
 function App() {
   const [user, setUser] = useState(null);
   const [cartCount, setCartCount] = useState(0);
+  const { show, hide } = useGlobalLoader();
 
   // Fetch user and cart info
   const fetchUserAndCart = useCallback(async () => {
@@ -26,14 +31,15 @@ function App() {
       setCartCount(0);
       return;
     }
+    show();
     try {
-      // Fetch user info
+      // User info
       const userRes = await axios.get('http://localhost:3000/api/users/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUser(userRes.data);
 
-      // Fetch cart info
+      // Cart info
       const cartRes = await axios.get('http://localhost:3000/api/cart/items', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -43,8 +49,10 @@ function App() {
       setUser(null);
       setCartCount(0);
       localStorage.removeItem('token');
+    } finally {
+      hide();
     }
-  }, []);
+  }, [show, hide]);
 
   useEffect(() => {
     fetchUserAndCart();
@@ -53,7 +61,6 @@ function App() {
   return (
     <>
       <Header user={user} cartCount={cartCount} fetchUserAndCart={fetchUserAndCart} />
-
       <Routes>
         <Route
           path="/"
@@ -79,13 +86,24 @@ function App() {
         />
         <Route path="/product/:id" element={<ProductDetail />} />
         <Route path="/thank-you" element={<ThankYou />} />
-        {/* Password reset routes */}
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        {/* Static pages */}
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<AboutPage />} />
-        {/* Add more routes here as needed */}
+        <Route
+          path="/profile"
+          element={
+            <ProfilePage user={user} fetchUserAndCart={fetchUserAndCart} />
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <Settings user={user} fetchUserAndCart={fetchUserAndCart} />
+          }
+        />
+        {/* Optionally add a NotFound component: */}
+        {/* <Route path="*" element={<NotFound />} /> */}
       </Routes>
     </>
   );

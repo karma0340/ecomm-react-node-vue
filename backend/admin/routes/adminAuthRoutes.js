@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const db = require('../../models'); // Import db to access UserLogin and User
-const { User } = db; // Use User from db
+const db = require('../../models');
+const { User } = db;
 
 // GET: Admin Login Page
 router.get('/login', (req, res) => {
@@ -18,12 +18,11 @@ router.get('/login', (req, res) => {
 router.post('/login', async (req, res) => {
   console.log('Login attempt:', req.body);
 
-  // Accept login, username, or email as the login field
+  // Accept login as email or username (or explicit 'login' field)
   const login = req.body.login || req.body.username || req.body.email;
   const password = req.body.password;
 
   if (!login || !password) {
-    console.log('Missing login or password');
     return res.status(400).render('adminLogin', {
       layout: 'main',
       title: 'Admin Login',
@@ -32,14 +31,14 @@ router.post('/login', async (req, res) => {
     });
   }
 
+  // Determine if login is email or username
   const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(login);
+
   try {
     // Find user by email or username
     const user = await User.findOne({
       where: isEmail ? { email: login } : { username: login }
     });
-
-    console.log('User found:', user ? user.username : 'No user');
 
     if (!user) {
       return res.status(401).render('adminLogin', {
@@ -49,11 +48,8 @@ router.post('/login', async (req, res) => {
         error: 'Invalid credentials.'
       });
     }
-
-    // Compare entered password with stored hashed password
+    // Compare password
     const validPassword = await bcrypt.compare(password, user.password);
-    console.log('Password valid:', validPassword);
-
     if (!validPassword) {
       return res.status(401).render('adminLogin', {
         layout: 'main',
@@ -62,8 +58,6 @@ router.post('/login', async (req, res) => {
         error: 'Invalid credentials.'
       });
     }
-
-    console.log('User role:', user.role);
 
     if (user.role !== 'admin') {
       return res.status(403).render('adminLogin', {
@@ -74,22 +68,22 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    // Success: set session
+    // Set minimal session user object
     req.session.user = {
       id: user.id,
       username: user.username,
       role: user.role
     };
 
-    // ✅ Log the admin login for daily insights!
+    // Log the login (optional, non-blocking)
     try {
-      await db.UserLogin.create({ userId: user.id });
+      if (db.UserLogin && db.UserLogin.create) {
+        await db.UserLogin.create({ userId: user.id });
+      }
     } catch (e) {
-      console.error('Failed to log admin login:', e);
-      // Do not block login if logging fails
+      console.warn('Failed to log admin login:', e.message || e);
     }
 
-    console.log('Admin login successful:', user.username);
     return res.redirect('/admin/dashboard');
   } catch (err) {
     console.error('Admin login error:', err);

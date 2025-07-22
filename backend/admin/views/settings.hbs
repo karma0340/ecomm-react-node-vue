@@ -1,0 +1,112 @@
+{{!--
+  Professional User Settings – views/settings.hbs
+  Requires:
+    - user: { name, email, createdAt, avatar, ... }
+    - success/error: alert message if shown
+    - Bootstrap 5+ & Bootstrap Icons loaded globally
+--}}
+
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+
+      <div class="card shadow rounded border-0">
+        <div class="card-body p-4">
+
+          <h2 class="h4 mb-4 text-center">Account Settings</h2>
+
+          {{#if success}}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="bi bi-check-circle me-2"></i> {{success}}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {{/if}}
+          {{#if error}}
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i> {{error}}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {{/if}}
+
+          <form method="POST" action="/settings" autocomplete="off">
+            <div class="mb-3 text-center">
+              {{#if user.avatar}}
+                <img src="{{user.avatar}}" alt="Avatar" class="rounded-circle shadow" width="66" height="66" style="object-fit:cover;">
+              {{else}}
+                <div class="d-inline-flex align-items-center justify-content-center rounded-circle bg-secondary text-white fw-bold shadow"
+                     style="width:66px; height:66px; font-size:1.6rem;">
+                  {{#if user.name}}{{user.name.[0]}}{{else}}U{{/if}}
+                </div>
+              {{/if}}
+            </div>
+
+            <div class="mb-3">
+              <label for="settings-name" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="settings-name" name="name"
+                     value="{{user.name}}" required minlength="2" maxlength="64" autocomplete="name">
+            </div>
+
+            <div class="mb-3">
+              <label for="settings-email" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="settings-email" name="email"
+                     value="{{user.email}}" required maxlength="96" autocomplete="email">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Registered</label>
+              <div class="text-muted small">
+                <i class="bi bi-calendar-event me-1"></i>
+                {{formatDate user.createdAt "date"}}
+              </div>
+            </div>
+
+            <div class="mb-4 text-end">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save"></i> Save Changes
+              </button>
+            </div>
+          </form>
+
+          <hr class="my-4" />
+
+          {{!-- Change password section (optional) --}}
+          <div>
+            <h5 class="mb-3">Change Password</h5>
+            <form method="POST" action="/settings/password" autocomplete="off">
+              <div class="row g-2">
+                <div class="col-12 col-md-4">
+                  <input type="password" class="form-control" name="oldPassword" placeholder="Current Password" required minlength="5">
+                </div>
+                <div class="col-12 col-md-4">
+                  <input type="password" class="form-control" name="newPassword" placeholder="New Password" required minlength="5">
+                </div>
+                <div class="col-12 col-md-4">
+                  <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm New" required minlength="5">
+                </div>
+              </div>
+              <div class="text-end mt-2">
+                <button type="submit" class="btn btn-outline-secondary btn-sm">
+                  <i class="bi bi-shield-lock"></i> Update Password
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {{!-- Optionally, add account deletion or more panels below --}}
+      {{!--
+      <div class="card mt-4 border-danger">
+        <div class="card-body text-danger">
+          <h6 class="fw-semibold mb-2">Danger Zone</h6>
+          <form>
+            <button class="btn btn-danger btn-sm" type="submit" disabled>
+              Delete this account (coming soon)
+            </button>
+          </form>
+        </div>
+      </div>
+      --}}
+    </div>
+  </div>
+</div>

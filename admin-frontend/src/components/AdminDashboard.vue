@@ -1,8 +1,17 @@
 <template>
   <div id="wrapper">
-    <button @click="toggleTheme" class="theme-switcher">
-      {{ isDark ? '🌙' : '☀️' }}
-    </button>
+<button
+  @click="onThemeClick"
+  class="theme-switcher"
+  :class="[{ 'theme-switcher--scrolled': isScrolled }, { 'theme-switcher--active': themeJustChanged }]"
+  aria-label="Switch theme"
+>
+  <span class="theme-icon">
+    {{ isDark ? '🌙' : '☀️' }}
+  </span>
+</button>
+
+
     <div class="content-area">
       <div class="container-fluid">
         <div class="main">
@@ -87,11 +96,7 @@
                   <span class="legend-dot returning"></span> Returning
                   <span class="legend-dot total"></span> Total
                 </div>
-                <div class="chart-explanation">
-                  <span>New: First-time customers</span> |
-                  <span>Returning: Repeat customers</span> |
-                  <span>Total: All unique customers</span>
-                </div>
+
               </div>
             </div>
           </div>
@@ -110,21 +115,40 @@
               />
             </transition>
             <div class="chart-explanation" style="margin-top:0.5rem;">
-              <span>Shows total orders and new users for the most recent full month.</span>
+
             </div>
             <button @click="fetchChartData" class="btn btn-primary mt-3">Refresh Chart Data</button>
           </div>
 
-          <!-- Recent Customers Table -->
-          <div class="box mt-4">
-            <transition-group name="fade" tag="table" class="table">
-              <tr v-for="c in recentCustomers" :key="c.id">
-                <td>{{ c.username }}</td>
-                <td>{{ c.email }}</td>
-                <td>{{ new Date(c.createdAt).toLocaleDateString() }}</td>
-              </tr>
-            </transition-group>
-          </div>
+<!-- Recent Customers Table -->
+<div class="card box shadow-sm p-3 mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="h6 mb-0 fw-bold text-primary">Recent Customers</span>
+  </div>
+  <div class="table-responsive">
+    <transition-group name="table-fade" tag="table" class="table table-hover table-borderless align-middle theme-table mb-0">
+      <thead v-if="recentCustomers.length">
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Signup Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="c in recentCustomers" :key="c.id">
+          <td>{{ c.username }}</td>
+          <td class="text-secondary">{{ c.email }}</td>
+          <td>{{ new Date(c.createdAt).toLocaleDateString() }}</td>
+        </tr>
+        <tr v-if="recentCustomers.length === 0" key="empty">
+          <td colspan="3" class="text-center text-muted">No customers found.</td>
+        </tr>
+      </tbody>
+    </transition-group>
+  </div>
+</div>
+
+          <!-- End of Recent Customers Table -->
         </div>
       </div>
     </div>
@@ -132,7 +156,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import VueApexCharts from 'vue3-apexcharts'
 
 // Register ApexCharts for <script setup>
@@ -140,12 +164,59 @@ defineProps()
 defineEmits()
 const apexchart = VueApexCharts
 
+// --- THEME SWITCHER ---
 const isDark = ref(false)
-function toggleTheme() {
-  isDark.value = !isDark.value
-  document.body.classList.toggle('dark-mode', isDark.value)
+const isScrolled = ref(false)
+const animatingTheme = ref(false)
+
+function applyThemeClasses() {
+  if (isDark.value) {
+    document.body.classList.add('dark-mode')
+    document.body.classList.remove('light-mode')
+  } else {
+    document.body.classList.add('light-mode')
+    document.body.classList.remove('dark-mode')
+  }
 }
 
+// On load, restore last selected theme from localStorage, if any
+if (typeof window !== 'undefined') {
+  const stored = localStorage.getItem('DASHBOARD_THEME')
+  if (stored === 'dark') {
+    isDark.value = true
+  } else {
+    isDark.value = false
+  }
+  applyThemeClasses()
+}
+
+function onThemeClick() {
+  isDark.value = !isDark.value
+  localStorage.setItem('DASHBOARD_THEME', isDark.value ? 'dark' : 'light')
+  applyThemeClasses()
+
+  // Animate icon and whole page
+  animatingTheme.value = true
+  document.body.classList.add('theme-animate')
+  setTimeout(() => {
+    animatingTheme.value = false
+    document.body.classList.remove('theme-animate')
+  }, 700) // should match animation duration in CSS
+}
+
+// Header-aware floating theme-switcher
+function handleScroll() {
+  isScrolled.value = window.scrollY > 64 // update 64 if your header is taller/shorter
+}
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+  handleScroll()
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+// --- YOUR DASHBOARD/ANIMATION LOGIC (unchanged) ---
 const barChart = ref(null)
 const colorPalette = ['#00D8B6', '#008FFB', '#FEB019', '#FF4560', '#775DD0']
 
@@ -164,7 +235,6 @@ const metrics = ref([
   { title: 'Sales', value: '₹0', trend: 0, icon: '💰', hint: 'Total sales' }
 ])
 
-// --- Animated Counter Logic ---
 const animatedValues = ref({
   Users: 0,
   Products: 0,
@@ -175,7 +245,6 @@ const animatedValues = ref({
 
 function animateValue(title, start, end, duration = 900) {
   if (typeof end === 'string' && end.startsWith('₹')) {
-    // Animate numbers for sales, keep ₹
     const numEnd = parseInt(String(end).replace(/[^\d]/g, '')) || 0
     let startNum = parseInt(String(start).replace(/[^\d]/g, '')) || 0
     let startTime = null
@@ -209,7 +278,6 @@ watch(metrics, (newMetrics, oldMetrics) => {
   })
 }, { immediate: true, deep: true })
 
-// Bar chart (Monthly Sales by Category)
 const barSeries = ref([])
 let lastClickedIndex = null
 const barOptions = ref({
@@ -251,7 +319,8 @@ const barOptions = ref({
   legend: { show: true }
 })
 
-// Donut chart (Category Sales)
+// --- DONUT, AREA, MULTILINE, ETC. (unchanged) ---
+
 const donutSeries = ref([])
 const donutOptions = ref({
   chart: { type: 'donut', width: '100%', height: 400, animations: { enabled: true, easing: 'easeinout', speed: 1000 } },
@@ -285,7 +354,6 @@ const donutOptions = ref({
   }
 })
 
-// Area chart (Daily Visits Insights)
 const areaSeries = ref([])
 const areaOptions = ref({
   chart: { height: 340, type: 'area', zoom: { enabled: false }, animations: { enabled: true, easing: 'easeinout', speed: 1000 } },
@@ -299,7 +367,6 @@ const areaOptions = ref({
   yaxis: { labels: { style: { colors: '#78909c' } }, axisBorder: { show: false }, axisTicks: { show: false }, stepSize: 3 }
 })
 
-// Multi-line Customers Chart (New, Returning, Total)
 const multiLineSeries = ref([])
 const multiLineOptions = ref({
   chart: {
@@ -313,24 +380,12 @@ const multiLineOptions = ref({
   title: { text: '', align: 'left', style: { fontSize: '18px' } },
   subtitle: { text: '', align: 'center', offsetY: 24, style: { color: '#222', fontSize: '15px' } },
   markers: { size: 7, hover: { size: 11 } },
-  xaxis: {
-    categories: [],
-    labels: { show: true, style: { fontSize: '13px' } }
-  },
-  yaxis: {
-    labels: { show: true, style: { fontSize: '13px', colors: ['#00b894', '#fdcb6e', '#0984e3'] } },
-    min: 0
-  },
+  xaxis: { categories: [], labels: { show: true, style: { fontSize: '13px' } } },
+  yaxis: { labels: { show: true, style: { fontSize: '13px', colors: ['#00b894', '#fdcb6e', '#0984e3'] } }, min: 0 },
   legend: { show: false },
-  tooltip: {
-    enabled: true,
-    shared: true,
-    theme: 'dark',
-    x: { show: true, format: 'yyyy-MM-dd' }
-  }
+  tooltip: { enabled: true, shared: true, theme: 'dark', x: { show: true, format: 'yyyy-MM-dd' } }
 })
 
-// Responsive, Non-overlapping Orders & Users Chart
 const chartKey = ref(0)
 const chartOptions = ref({
   chart: {
@@ -344,36 +399,13 @@ const chartOptions = ref({
       dynamicAnimation: { enabled: true, speed: 900 }
     }
   },
-  plotOptions: {
-    bar: {
-      columnWidth: '55%',
-      distributed: false
-    }
-  },
-  xaxis: {
-    categories: []
-  },
-  subtitle: {
-    text: 'Data for the most recent full month',
-    align: 'left',
-    style: { fontSize: '14px', color: '#888' }
-  },
+  plotOptions: { bar: { columnWidth: '55%', distributed: false } },
+  xaxis: { categories: [] },
+  subtitle: { text: 'Data for the most recent full month', align: 'left', style: { fontSize: '14px', color: '#888' } },
   legend: { show: true },
   responsive: [
-    {
-      breakpoint: 900,
-      options: {
-        chart: { height: 400 },
-        plotOptions: { bar: { columnWidth: '70%' } }
-      }
-    },
-    {
-      breakpoint: 600,
-      options: {
-        chart: { height: 350 },
-        plotOptions: { bar: { columnWidth: '90%' } }
-      }
-    }
+    { breakpoint: 900, options: { chart: { height: 400 }, plotOptions: { bar: { columnWidth: '70%' } } } },
+    { breakpoint: 600, options: { chart: { height: 350 }, plotOptions: { bar: { columnWidth: '90%' } } } }
   ]
 })
 
@@ -382,7 +414,6 @@ const series = ref([
   { name: 'Users', data: [] }
 ])
 
-// Recent customers
 const recentCustomers = ref([])
 
 const fetchChartData = async () => {
@@ -465,159 +496,11 @@ onMounted(async () => {
 import { useSlots } from 'vue'
 import { h } from 'vue'
 const slots = useSlots ? useSlots() : null
+
+
 </script>
 
 <style scoped>
-/* ... your existing styles ... */
-body {
-  background-color: #eff4f7;
-  color: #777;
-  font-family: 'Titillium Web', Arial, Helvetica, sans-serif
-}
-body.dark-mode {
-  background: #181a1b !important;
-  color: #eee !important;
-}
-.theme-switcher {
-  position: fixed; top: 1.5rem; right: 2rem; background: none; border: none; font-size: 2rem; z-index: 99;
-}
-h1, h2, h3, h4, h5, h6, strong { font-weight: 600; }
-.content-area { max-width: 1300px; margin: 0 auto; }
-.box {
-  max-height: 444px;
-  box-shadow: 0px 1px 22px -12px #607D8B;
-  background-color: #fff;
-  padding: 25px 35px 25px 30px;
-  border-radius: 4px;
-  margin-bottom: 2rem;
-  transition: background 0.3s;
-}
-body.dark-mode .box {
-  background: #23272b;
-  color: #eee;
-}
-.card-grid {
-  display: grid;
-  gap: 1.5rem;
-  grid-template-columns: repeat(3, 1fr);
-  margin-bottom: 2rem;
-}
-.card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 22px -12px #607D8B;
-  padding: 2rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: 120px;
-  transition: transform 0.2s, background 0.3s;
-}
-body.dark-mode .card {
-  background: #23272b;
-  color: #eee;
-}
-.card:hover {
-  transform: translateY(-7px) scale(1.04);
-  box-shadow: 0 4px 32px -8px #607D8B;
-}
-.card-title {
-  font-size: 1.1rem;
-  color: #555;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-body.dark-mode .card-title {
-  color: #eee;
-}
-.card-value {
-  font-size: 2.2rem;
-  font-weight: 700;
-  color: #008FFB;
-  min-height: 2.2rem;
-  display: flex;
-  align-items: center;
-}
-.trend {
-  margin-left: 0.5rem;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-}
-.trend.up { color: #00b894; }
-.trend.down { color: #d63031; }
-.icon-up::before { content: "▲"; }
-.icon-down::before { content: "▼"; }
-.counter-enter-active, .counter-leave-active {
-  transition: transform 0.4s, opacity 0.4s;
-}
-.counter-enter-from, .counter-leave-to {
-  transform: scale(1.2);
-  opacity: 0;
-}
-.chart-subtitle {
-  font-size: 1.1rem;
-  color: #888;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-}
-.table {
-  width: 100%;
-  margin-top: 1rem;
-}
-.table tr {
-  border-bottom: 1px solid #eee;
-  transition: background 0.3s;
-}
-.table tr:hover {
-  background: #f5faff;
-}
-body.dark-mode .table tr:hover {
-  background: #23272b;
-}
-.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.chart-legend {
-  margin-top: 0.75rem;
-  font-size: 1rem;
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-}
-.legend-dot {
-  display: inline-block;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  margin-right: 0.5rem;
-}
-.legend-dot.new { background: #00b894; }
-.legend-dot.returning { background: #fdcb6e; }
-.legend-dot.total { background: #0984e3; }
-.chart-explanation {
-  font-size: 0.95rem;
-  color: #888;
-  margin-top: 0.5rem;
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-.chart-hint {
-  margin-left: 0.5rem;
-  cursor: pointer;
-  color: #888;
-  font-size: 1.1rem;
-}
-@media (max-width: 900px) {
-  .card-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .card-grid {
-    grid-template-columns: 1fr;
-  }
-}
-.mt-4 { margin-top: 1.5rem !important; }
-.mb-4 { margin-bottom: 1.5rem !important; }
-.mt-5 { margin-top: 3rem !important; }
+/* ... This code is in src/assets/css/global.css ... */
+
 </style>
