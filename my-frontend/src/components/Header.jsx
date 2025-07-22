@@ -195,8 +195,8 @@ function Header({ user, cartCount, fetchUserAndCart }) {
     { to: '/checkout', label: 'Checkout' },
     { to: '/orders', label: 'Orders' },
     // { to: '/wishlist', label: 'Wishlist' },
-    { to: '/address', label: 'Addresses' },
-    { to: '/settings', label: 'Settings' }, // Uncomment if you have
+    { to: '/profile', label: 'Addresses' },
+    { to: '/profile', label: 'Settings' }, // Uncomment if you have
     // { to: '/reset-password', label: 'Reset Password' },
     { to: '/forgot-password', label: 'Forgot Password' },
     { to: '/logout', label: 'Logout' }
